@@ -1,0 +1,696 @@
+---
+title: "Does school starting age impact well-being and test scores?"
+author: "Frank Popham & Cristina Iannelli"
+date: "03/02/2021"
+output: word_document
+bibliography: ref3.bib
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+### Introduction
+
+One potential role of the school system is to decrease inequalities in
+the resources for learning between socioeconomically advantaged and
+disadvantaged children. A young school starting age may help more
+disadvantaged children by compensating for their more limited learning
+resources at home. However there is danger with such an approach, as
+there is evidence that being relatively young in a school year is a
+disadvantage that could even offset any additional benefit of starting
+school early. For more advantaged children when they start school or are
+younger in the year may be less important as home resources can
+compensate. For example, Suziedelytea and Zhu [@SUZIEDELYTE201576] found
+that while early school starting age had positive impacts for cognitive
+ability in young primary school children in Australia, particularly
+those disadvantaged, it had negative impacts on social development
+across the socioeconomic spectrum. In Scotland, children whose 4th
+birthday is in February will normally start school that August while
+those born March onward will start the following August. Pupils not aged
+five by the August start can delay school a year with those born in
+January and February who delay automatically entitled to an extra year
+of nursery provision however this is discretionary for those born
+September to December. While much work in Scotland has been conducted on
+pupils social and emotional in Scotland in recent years (for an overview
+see ) and some focus has been paid to school readiness and starting age,
+most reports associations rather than a causal focus . This is a
+significant gap as there is consistent evidence from natural experiment
+studies in other countries that school starting age can affect the
+likelihood of mental health problems and of a diagnosis of attention
+deficit hyperactivity disorder (ADHD) [@Dee2018; @chen2015;
+@ELDER2010641; @EVANS2010657; @SCHWANDT201672]. Here it is school
+starting age affecting relative age within the school year that is the
+studied mechanism. Most studies assess these affects by socioeconomic
+background finding that impacts across the socioeconomic spectrum but
+sometimes less so in those more advantaged [@Dee2018; @chen2015;
+@ELDER2010641; @EVANS2010657]. A German study suggests that more
+educated parents may be more likely to seek an ADHD diagnosis got their
+young for year child but recognizes their evidence for this is weak
+[@SCHWANDT201672]. Crawford et al. [-@crawford2014] outline the four
+possible mechanisms through which age at starting school might impact
+education and wellbeing outcomes: age at test, age of starting school,
+length of schooling and relative age. As exams are generally taken at
+the same time, age at test may be an important mechanism. By studying
+test taken at the same age, they showed that most of the effect of
+starting age on test performance in England was through age at test.
+Analysis of England's PISA test scores (where the sample is age selected
+so age at test is less of a factor) found little impact of school
+starting cut-off, this was interpreted as an extra year of schooling
+(length of schooling) having little effect [@Luyten2008; @benton2014].
+It could also be driven by age of starting school or relative age
+effects or a combination of all three offsetting. Luyten et al.
+[-@Luyten2008] suggest that any positive effect of being in a higher
+grade was greatest in more disadvantaged pupils. This raises the
+possibility of a trade off between better test scores and worse mental
+wellbeing especially for disadvantaged pupils
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE)
+library(knitr)
+library(tidyverse)
+library(haven)
+library(lubridate)
+library(broom)
+library(survey)
+library(srvyr)
+library(ggpubr)
+library(rdrobust)
+library(rddensity)
+library(rdlocrand)
+library(gtsummary)
+library(gt)
+library(flextable)
+library(mitools)
+
+  
+datasort <- function(df, hisei) {df %>%
+    select(CNTSTUID,
+         CNTSCHID, 
+         yeardob = ST003D03T,
+         monthdob = ST003D02T,
+         grade = ST001D01T,
+         ESCS,
+         HISEI={{hisei}},
+         HISCED,
+         MISCED,
+         FISCED,
+         BFMJ2,
+         BMMJ1,
+         HOMEPOS,
+         SUBNATIO,
+         AGE,
+         STRATUM,
+         sex=ST004D01T,
+         repeat1=ST127Q01TA,
+         repeat2=ST127Q02TA,
+         repeat3=ST127Q03TA,
+         starts_with("W_FST"),
+         starts_with("PV"),
+         ST184Q01HA, ST208Q01HA, ST208Q02HA, ST208Q04HA,
+         ST182Q03HA, ST182Q04HA, ST182Q05HA,
+         ST182Q06HA, ST188Q01HA, ST188Q02HA,
+         ST188Q03HA, ST188Q06HA, ST188Q07HA,
+         ST183Q01HA, ST183Q02HA, ST183Q03HA,
+         ST185Q01HA, ST185Q02HA, ST185Q03HA,
+         ST186Q05HA, ST186Q06HA, ST186Q07HA,
+         ST186Q10HA, ST186Q09HA, ST186Q02HA,
+         ST186Q01HA, ST186Q08HA, ST186Q03HA, 
+         ST016Q01NA, ST181Q02HA, ST181Q03HA, ST181Q04HA, 
+         ST038Q03NA, ST038Q04NA, ST038Q05NA, 
+         ST038Q06NA, ST038Q07NA, ST038Q08NA, 
+         ST205Q01HA, ST205Q02HA, ST205Q03HA, 
+         ST205Q04HA, ST206Q01HA, ST206Q02HA,  
+         ST206Q03HA, ST206Q04HA, ST123Q02NA, 
+         ST123Q03NA, ST123Q04NA, ST034Q01TA, 
+         ST034Q02TA, ST034Q03TA, ST034Q04TA,  
+         ST034Q05TA, ST034Q06TA) %>%
+    mutate(CNTSTUID = as.numeric(CNTSTUID),
+    CNTSCHID= as.numeric(CNTSCHID),
+    yeardob = as.numeric(yeardob),
+    monthdob = as.numeric(monthdob),
+    ESCS = as.numeric(ESCS),
+    grade = as_factor(grade),
+    HISEI = as.numeric(HISEI),
+    HISCED = as_factor(HISCED),
+    FISCED = as_factor(FISCED),
+    MISCED = as_factor(MISCED),
+    BFMJ2 = as.numeric(BFMJ2),
+    BMMJ1 = as.numeric(BMMJ1),
+    HOMEPOS = as.numeric(HOMEPOS),
+    AGE=as.numeric(AGE),
+    sex=as_factor(sex),
+    STRATUM=as_factor(STRATUM),
+    repeat1=as_factor(repeat1),
+    repeat2=as_factor(repeat2),
+    repeat3=as_factor(repeat3),
+    across(starts_with("PV", ignore.case = FALSE), ~as.numeric(.x)),
+    across(ends_with("HA", ignore.case = FALSE), ~as_factor(.x)),
+    across(ends_with("NA", ignore.case = FALSE), ~as_factor(.x)),
+    across(ends_with("TA", ignore.case = FALSE), ~as_factor(.x)),
+    Lifesat=as.numeric(ST016Q01NA)) %>%
+    mutate(across(starts_with("W_FST"), ~ as.numeric(.x))) %>%
+    unite("dob", c(yeardob, monthdob), remove=FALSE, sep = "") %>%
+    mutate(dob = ym(dob)) %>%
+    mutate(across(where(is.factor), ~fct_drop(.x)))
+}
+
+filltar <- function(df=.data) {df %>%
+  filter(grade == "Grade 12" | grade == "Grade 11" )  %>%
+  filter(repeat1=="No, never") %>%
+  filter(repeat2=="No, never") %>%
+  filter(repeat3=="No, never") %>%
+  mutate(grade2 = if_else(grade == "Grade 12", "S5", "S4")) %>%
+  mutate(grade=fct_drop(grade)) 
+}  
+
+
+```
+
+```{r data,  include=FALSE}
+
+#2015 
+
+#unzip("PUF_SPSS_COMBINED_CMB_STU_QQQ.zip")
+
+#allpisadf2015 <- read_sav("CY6_MS_CMB_STU_QQQ.sav") 
+#gbrpisadf2015 <-   allpisadf2015 %>%
+#  filter(CNTRYID==826) 
+
+#remove(allpisadf2015)
+
+#remove(allpisadf2015)
+#gc() #free ram
+
+
+#2018 
+#unzip("SPSS_STU_QQQ.zip")
+# scot
+allpisadf2018 <- read_sav("STU/CY07_MSU_STU_QQQ.sav") 
+scotpisadf2018 <-   allpisadf2018 %>%
+  filter(SUBNATIO=="8262000")   
+
+
+
+
+
+
+
+#free ram
+rm(allpisadf2018)
+gc()
+
+
+# https://www.oecd-ilibrary.org/sites/0a428b07-en/index.html?itemId=/content/component/0a428b07-en
+
+# mum, father, highest education - MISCED, FISCED, HISCED
+
+# fathers BFMJ2; mother’s BMMJ1; and the highest occupational status of parents HISEI
+  
+scotpisadf2018 <- datasort(scotpisadf2018, HISEI) %>%
+  as_survey_rep(repweights=starts_with("W_FSTURWT"),
+                           weights=W_FSTUWT, type="BRR")
+
+
+#gbrpisadf2015 <- datasort(gbrpisadf2015, hisei)
+
+#gbrpisadf <- bind_rows("2015"=gbrpisadf2015, "2018"=gbrpisadf2018, .id="year")
+
+
+```
+
+```{r tables, echo=FALSE, include=FALSE, warning=FALSE}
+
+
+#Exclusions
+#grade 10
+ex1 <- scotpisadf2018 %>%
+group_by(grade) %>%
+summarise(n())
+#repeat
+ex2 <- scotpisadf2018 %>%
+group_by(repeat1) %>%
+summarise(n())
+
+ex3 <- scotpisadf2018 %>%
+group_by(repeat2) %>%
+summarise(n())
+
+ex4 <- scotpisadf2018 %>%
+group_by(repeat3) %>%
+summarise(n())
+  
+
+
+
+#tables
+theme_gtsummary_compact()
+svytable1 <- scotpisadf2018 %>%
+  filltar() %>%
+  tbl_svysummary(by=grade2,
+  statistic = list(all_continuous() ~ "{mean} ({sd})",
+                   all_categorical() ~"{p}%"),
+  label=list(AGE ~ "Age",
+             sex ~ "Sex",
+             HOMEPOS ~ "Home possessions scale",
+             HISEI ~ "Highest Occupation of parents (ISEI)"),
+  missing="no",
+  include=c(grade2, AGE, sex, ESCS, HISEI, HOMEPOS, HISCED)
+  ) %>%
+  add_n(statistic = "{p_miss}%",
+        col_label="**% miss**") %>%
+  add_overall()  %>%
+  as_flex_table() %>%
+  set_caption(caption = "Table 1: Student characteristics
+              in Scotland PISA 2018 by grade.") %>%
+  autofit() 
+  
+  
+
+svytable2 <- scotpisadf2018 %>%
+  filltar() %>%
+  filter(dob >= ymd("2002_09_01") & dob <=ymd("2003_02_01")) %>%
+  mutate(Defer=if_else(grade=="Grade 11", "Yes", "No")) %>%
+  tbl_svysummary(by=Defer,
+  type= AGE ~ "continuous",               
+  statistic = list(all_continuous() ~ "{mean} ({sd})",
+                   all_categorical() ~"{p}%"),
+  label=list(AGE ~ "Age",
+             sex ~ "Sex",
+             HOMEPOS ~ "Home possessions scale",
+             HISEI ~ "Highest Occupation of parents (ISEI)"),
+  missing="no",
+  include=c(Defer, AGE, sex, ESCS, HISEI, HOMEPOS, HISCED)
+  ) %>%
+  add_overall()   
+
+svytable3 <- scotpisadf2018 %>%
+  filltar() %>%
+  filter(dob >= ymd("2003_01_01") & dob <=ymd("2003_02_01")) %>%
+  mutate(Defer=if_else(grade=="Grade 11", "Yes", "No")) %>%
+  tbl_svysummary(by=Defer,
+  type= AGE ~ "continuous",               
+  statistic = list(all_continuous() ~ "{mean} ({sd})",
+                   all_categorical() ~"{p}%"),
+  label=list(AGE ~ "Age",
+             sex ~ "Sex",
+             HOMEPOS ~ "Home possessions scale",
+             HISEI ~ "Highest Occupation of parents (ISEI)"),
+  missing="no",
+  include=c(Defer, AGE, sex, ESCS, HISEI, HOMEPOS, HISCED)
+  ) %>%
+  add_overall()   
+
+svytable4 <- scotpisadf2018 %>%
+  filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
+  mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
+  tbl_svysummary(by=month,
+  type= AGE ~ "continuous",               
+  statistic = list(all_continuous() ~ "{mean} ({sd})",
+                   all_categorical() ~"{p}%"),
+  label=list(AGE ~ "Age",
+             sex ~ "Sex",
+             HOMEPOS ~ "Home possessions scale",
+             HISEI ~ "Highest Occupation of parents (ISEI)"),
+  missing="no",
+  include=c(month, AGE, sex, ESCS, HISEI, HOMEPOS, HISCED)
+  )  %>%
+  add_p() %>%
+  as_flex_table() %>%
+  set_caption(caption = "Table 2 Student characteristics by month at cut off") %>%
+  autofit() 
+
+
+svytable5 <- scotpisadf2018 %>%
+  filltar() %>%
+  filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
+  mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
+  mutate(month_grade=interaction(grade2, month, sep=" ")) %>%
+  filter(month_grade!="S5 March") %>%
+  mutate(month_grade=fct_drop(month_grade)) %>%
+  tbl_svysummary(by=month_grade,
+  type= AGE ~ "continuous",               
+  statistic = list(all_continuous() ~ "{mean} ({sd})",
+                   all_categorical() ~"{p}%"),
+  label=list(AGE ~ "Age",
+             sex ~ "Sex",
+             HOMEPOS ~ "Home possessions scale",
+             HISEI ~ "Highest Occupation of parents (ISEI)"),
+  missing="no",
+  include=c(month_grade, AGE, sex, ESCS, HISEI, HOMEPOS, HISCED)
+  )  %>%
+  as_flex_table() %>%
+  set_caption(caption = "Table 3 Student characteristics
+              by grade and month at cut off") %>%
+  autofit()   
+
+ svyfig1 <- scotpisadf2018 %>%
+   filltar() %>%
+  group_by(dob) %>%
+  summarise(mgrade11 = survey_mean(grade=="Grade 11", vartype=c("ci"), proportion = TRUE), na.rm=TRUE) %>%
+  ggplot(aes(x=dob, y=mgrade11*100, 
+             ymin=mgrade11_low*100, ymax=mgrade11_upp*100)) +
+  geom_point() +
+  geom_linerange() +
+  scale_x_date(date_labels = "%b/%y", date_breaks = "month") +
+  labs(x="Born",
+       y="% in S4")
+ ggsave("svyfig1.png", width=16, height=16, units="cm")
+
+
+fsvytable6 <- function(sw, cap) {scotpisadf2018 %>%
+  filltar() %>%
+  tbl_svysummary(
+  statistic = list(all_continuous() ~ "{mean} ({sd})",
+                   all_categorical() ~"{p}%"),
+  missing="no",
+  include=c(starts_with(sw))) %>%
+  modify_header(label ~ "**Outcomes**") %>%
+  add_n(statistic = "{p_miss}%",
+        col_label="**% miss**") %>%
+  as_flex_table() %>%
+  set_caption(caption = cap) %>%
+  autofit() 
+}  
+
+svytable6_cog <- fsvytable6("ST184Q", "Table 4 Cognitive wellbeing")
+  
+svytable6_learn <- fsvytable6("ST208Q", "Table 5 Learning goals")
+svytable6_motiv <- fsvytable6("ST182Q", "Table 6 Motivation to master tasks") 
+svytable6_resil <- fsvytable6("ST188Q", "Table 7 Resilience (or self-efficacy)") 
+svytable6_fail <- fsvytable6("ST183Q", "Table 8 Fear of failure")
+svytable6_mean <- fsvytable6("ST185Q", "Table 9 Meaning in life")
+svytable6_pfeel <- fsvytable6("ST186Q", "Table 10 Positive feelings")
+svytable6_satis <- fsvytable6("Lifesat", "Table 11 Life satisfaction")
+svytable6_comp <-  fsvytable6("ST181Q", "Table 12 Attitudes to competition")
+
+svytable6_bully <-  fsvytable6("ST038Q", "Table 13 Exposure to bullying")
+svytable6_stucomp <- fsvytable6("ST205Q", "Table 14 Student competition")
+svytable6_coop <-  fsvytable6("ST206Q", "Table 15 Student co-operation")
+svytable6_supp <- fsvytable6("ST123Q", "Table 16 Parents' emotional support")
+svytable6_belong <- fsvytable6("ST034Q", "Table 17 Sense of belonging scale")
+
+
+#Based on http://asdfree.com/program-for-international-student-assessment-pisa.html
+pvmeanandci <- function(test) {
+v1 <- scotpisadf2018 %>%
+  select(ends_with(test)) 
+m1 <- names(v1$variables) %>%
+        map(~scotpisadf2018 %>%
+        filltar() %>%
+        rename(res=.data[[.x]])) %>%
+  map(~svymean(~res, design=.x)) %>%
+  MIcombine() 
+  ci <- confint(m1)
+  tibble("Mean" = round(m1$coefficients[["res"]]),
+         "LCI" = round(ci[1,1]),
+         "UCI" = round(ci[1,2]))
+}
+
+math <- pvmeanandci("MATH")
+read <- pvmeanandci("READ")
+science <- pvmeanandci("SCIE")
+  
+svytable7 <- bind_rows("Math"=math, 
+                       "Reading"=read, 
+                       "Science"=science, 
+                        .id="Subject") %>%
+            gt(rowname_col="Subject") %>%
+       cols_label(
+   Mean = md("**Mean**"),
+    LCI = md("**Lower CI**"),
+    UCI = md("**Upper CI**")
+  ) %>%
+  tab_style(style=cell_text(size="small"),
+            locations=cells_body()) %>%
+  tab_header(title = "Table 18 PISA assessment scores") 
+
+  
+ 
+  
+
+
+
+    
+```
+
+### Method 
+
+#### Data
+
+We are using The Programme for International Student Assessment (PISA)
+2018 data for Scotland (and England as a comparison). PISA surveys 15
+years old students (with some leeway so includes some aged 16 ) in
+formal schooling in countries across the OECD using a standard framework
+with local adaptations. The core aim is to assess and compare countries
+on students' literacy in reading, maths and science. School based
+fieldwork in Scotland between 8th October and 14th December 2018. A two
+stage stratified sample was employed, schools and then students in
+schools were sampled (for details see [@sg2018]). Scotland had an 81%
+participation rate meeting the 80% target of the OECD. Surveys were
+computer administered and in addition to assessing the core literacies
+students completed a questionnaire covering their socio-economic
+background and their wellbeing which we draw on in this study as well.
+The Scottish questionnaires are available to download at
+[[http://www.oecd.org/pisa/publications/UK%20(Scotland).zip]](http://www.oecd.org/pisa/publications/UK%20(Scotland).zip)[(http://www.oecd.org/pisa/publications/UK%20(Scotland).zip)](http://www.oecd.org/pisa/publications/UK%20(Scotland).zip)
+. As PISA is aimed at a specific age, it can cover a number of school
+years (grades in PISA terminology) . In Scotland the sample was split
+between S4 and S5 pupils (PISA grades 11 and 12) , the few in other
+years are excluded in our analysis as any pupils who said they had
+repeated a year. These exclusions reduced the sample from 2998 pupils to
+2802 pupils. Given the complex survey design all analysis incorporates
+replication weights and student weights. The weights are scaled to the
+population rather than the sample hence why in the following the sample
+size is 42,243. Table 1 describes the sample overall and by school year.
+We include four measures of socio-economic position. PISA's summary
+scale is the index of economic, social and cultural status (ESCS). It is
+based on three indices, parental education (International Standard
+Classification of Education[)]{.ul}, parental occupation (International
+Socio-Economic Index) and PISA's home possessions scale. There is some
+imputation for missing data when calculating the ESCS.
+
+
+
+```{r table 1, include=TRUE, message=FALSE}
+knit_print(svytable1)
+
+```
+
+#### Design
+
+As illustrated in Figure 1 Scotland's February / March cut off leads to
+a large jump in the probability of being in S4 as opposed to S5. This
+allows a regression discontinuity design.
+
+```{r fig1, echo=FALSE, fig.cap="Figure 1 - The probability of being in grade 11 by date of birth."}
+include_graphics("svyfig1.png")
+
+```
+
+There are two types of regression discontinuity , local randomisation
+and continuity. We have the running variable of date of birth with a cut
+point in Feb / March that means the probability of one less year (S4) of
+schooling at nearly the same age jumps. Our effect is local to those at
+the cut point, in other words those born in Feb / March. As we only have
+a discrete date of birth (we do not know day only month and year) the
+more natural approach is local randomisation. Here we limit analysis to
+those in Feb and March, our window. Our assumptions are that the running
+variable is not related to the potential outcomes in our window and that
+treatment (grade) is effectively randomised.
+
+```{r eval=FALSE, include=FALSE}
+
+dob2 <- gbrpisadf2018 %>%
+  filter(country=="Scotland") %>%
+  mutate(dob2=as.period(interval(ymd("2003-03-01"),.$dob))) %>%
+  mutate(dob2=as.numeric(dob2, "months")) %>%
+  mutate(dob2=if_else(dob2>=0, dob2+1, dob2)) %>%
+  select(dob2)
+
+density_result <-  rdwinselect(dob2$dob2, wmin=1, nwindows=1)
+
+```
+
+-   To assess these assumptions (indirectly) table 2 compares those born
+    February / March and the only main difference is a small one
+    (obviously) in age. Also we can run a test to see if there is
+    evidence of bunching in the distribution of month of birth at the
+    cut point , there doesn't seem to be (p=r
+    round(density_result\$results[[3]], 2)).
+
+
+```{r table 2, include=TRUE, message=FALSE}
+
+knit_print(svytable4)
+
+```
+
+-   Of course because of deferral option not everyone born February is
+    in grade 12. Table 3 shows that those deferring are more likely to
+    be male and (slightly) more advantaged. This obviously violates the
+    assumptions set out?
+-   Yes, but their is a solution. As the cut date is "random" it can be
+    used as an instrument for grade. This is a so called "fuzzy"
+    regression discontinuity.
+
+\newpage
+
+
+
+```{r table 3, include=TRUE, message=FALSE}
+
+knit_print(svytable5)
+
+```
+
+-   The other flavour of regression discontinuity is based on the
+    continuity assumption. Basically this allows the forcing variable
+    (and de facto other variables) to be related to the outcome but in a
+    smooth fashion so that any jump at the cut point can be assigned to
+    the intervention. It involves fitting regression lines either side
+    of the cut point in a window of data define by the forcing variable.
+    With discrete data the lack of a continuous forcing variable is
+    slightly problematic.
+
+-   An attraction of also using this approach is that we can use age as
+    the forcing variable, we might expect age to increase exam
+    performance but not in a jump. This then allows us to account for
+    any small age at test differences. Using England were everyone is in
+    the same grade can also help with this.
+
+-   As with local randomization there is also a fuzzy version of
+    continuity regression discontinuity that works in the same way.
+
+#### Outcomes
+
+##### Wellbeing
+
+We will use the PISA framework of wellbeing that covers three main
+dimensions (cognitive, psychological and social) [@govorova2020].
+
+**Cognitive**
+
+Students were asked whether they agreed with the statement "Your
+intelligence is something about you that you can't change very much."
+
+```{r table 4, include=TRUE, message=FALSE}
+
+knit_print(svytable6_cog)
+
+```
+
+**Psychological**
+
+Students were asked about the following eight domains of psychological
+well being most of which contain a number of questions
+
+-   Learning goals
+
+```{r table 5, include=TRUE, message=FALSE}
+
+knit_print(svytable6_learn)
+
+```
+
+-   Motivation to master tasks
+
+```{r table 6, include=TRUE, message=FALSE}
+
+knit_print(svytable6_motiv)
+
+```
+
+-   Resilience (or self-efficacy)
+
+```{r table 7, include=TRUE, message=FALSE}
+
+knit_print(svytable6_resil)
+
+```
+
+-   Fear of failure
+
+```{r table 8, include=TRUE, message=FALSE}
+
+knit_print(svytable6_fail)
+
+```
+-   Meaning in life
+
+```{r table 9, include=TRUE, message=FALSE}
+
+knit_print(svytable6_mean)
+
+```
+
+-   Positive feelings
+
+```{r table 10, include=TRUE, message=FALSE}
+
+knit_print(svytable6_pfeel)
+
+```
+
+-   Life satisfaction
+
+```{r table 11, include=TRUE, message=FALSE}
+
+knit_print(svytable6_satis)
+
+```
+
+-   Attitudes to competition
+
+```{r table 12, include=TRUE, message=FALSE}
+
+knit_print(svytable6_comp)
+
+```
+
+
+**Social**
+
+-   Exposure to bullying
+
+```{r table 13, include=TRUE, message=FALSE}
+
+knit_print(svytable6_bully)
+
+```
+
+
+-   Student competition
+
+```{r table 14, include=TRUE, message=FALSE}
+
+knit_print(svytable6_stucomp)
+
+```
+
+
+-   Student co-operation
+
+```{r table 15, include=TRUE, message=FALSE}
+
+knit_print(svytable6_coop)
+
+```
+
+-   Parents' emotional support
+
+```{r table 16, include=TRUE, message=FALSE}
+
+knit_print(svytable6_supp)
+
+```
+
+-   Sense of belonging scale
+
+```{r table 17, include=TRUE, message=FALSE}
+
+knit_print(svytable6_belong)
+
+```
+
+
+
+#### References
