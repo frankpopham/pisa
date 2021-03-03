@@ -1,7 +1,7 @@
 ---
 title: "Does school starting age impact well-being and test scores?"
 author: "Frank Popham & Cristina Iannelli"
-date: "03/02/2021"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: word_document
 bibliography: ref3.bib
 editor_options: 
@@ -30,29 +30,32 @@ those born March onward will start the following August. Pupils not aged
 five by the August start can delay school a year with those born in
 January and February who delay automatically entitled to an extra year
 of nursery provision however this is discretionary for those born
-September to December. While much work in Scotland has been conducted on
-pupils social and emotional in Scotland in recent years (for an overview
-see ) and some focus has been paid to school readiness and starting age,
-most reports associations rather than a causal focus . This is a
-significant gap as there is consistent evidence from natural experiment
-studies in other countries that school starting age can affect the
-likelihood of mental health problems and of a diagnosis of attention
-deficit hyperactivity disorder (ADHD) [@Dee2018; @chen2015;
-@ELDER2010641; @EVANS2010657; @SCHWANDT201672]. Here it is school
-starting age affecting relative age within the school year that is the
-studied mechanism. Most studies assess these affects by socioeconomic
-background finding that impacts across the socioeconomic spectrum but
-sometimes less so in those more advantaged [@Dee2018; @chen2015;
-@ELDER2010641; @EVANS2010657]. A German study suggests that more
-educated parents may be more likely to seek an ADHD diagnosis got their
-young for year child but recognizes their evidence for this is weak
-[@SCHWANDT201672]. Crawford et al. [-@crawford2014] outline the four
-possible mechanisms through which age at starting school might impact
-education and wellbeing outcomes: age at test, age of starting school,
-length of schooling and relative age. As exams are generally taken at
-the same time, age at test may be an important mechanism. By studying
-test taken at the same age, they showed that most of the effect of
-starting age on test performance in England was through age at test.
+September to December. Latest figures for Scotland show that
+socio-economic more advantaged parents are more likely to defer their
+child's start [@sg2020].
+
+While much work in Scotland has been conducted on pupils social and
+emotional in Scotland in recent years and some focus has been paid to
+school readiness and starting age, most reports associations rather than
+a causal focus . This is a significant gap as there is consistent
+evidence from natural experiment studies in other countries that school
+starting age can affect the likelihood of mental health problems and of
+a diagnosis of attention deficit hyperactivity disorder (ADHD)
+[@Dee2018; @chen2015; @ELDER2010641; @EVANS2010657; @SCHWANDT201672].
+Here it is school starting age affecting relative age within the school
+year that is the studied mechanism. Most studies assess these affects by
+socioeconomic background finding that impacts across the socioeconomic
+spectrum but sometimes less so in those more advantaged [@Dee2018;
+@chen2015; @ELDER2010641; @EVANS2010657]. A German study suggests that
+more educated parents may be more likely to seek an ADHD diagnosis got
+their young for year child but recognizes their evidence for this is
+weak [@SCHWANDT201672]. Crawford et al. [-@crawford2014] outline the
+four possible mechanisms through which age at starting school might
+impact education and wellbeing outcomes: age at test, age of starting
+school, length of schooling and relative age. As exams are generally
+taken at the same time, age at test may be an important mechanism. By
+studying test taken at the same age, they showed that most of the effect
+of starting age on test performance in England was through age at test.
 Analysis of England's PISA test scores (where the sample is age selected
 so age at test is less of a factor) found little impact of school
 starting cut-off, this was interpreted as an extra year of schooling
@@ -67,9 +70,9 @@ wellbeing especially for disadvantaged pupils
 The Scottish Green Party has recently advocated a school starting age of
 7 for academic and wellbeing reasons
 <https://greens.scot/news/scottish-greens-kids-should-start-school-at-seven>
-. The policy was informed by this commission review - [Working Paper \|
-School Starting Age (SSA): A Brief Summary \| University of
-Stirling](https://www.stir.ac.uk/research/hub/publication/1707844)
+. The policy was informed by a commission review of international
+studies [@bradfield2021] but does not include direct evidence from
+Scotland.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, eval = TRUE)
@@ -89,6 +92,7 @@ library(gt)
 library(flextable)
 library(tableone)
 library(mitools)
+library(osfr)
 
 options(scipen=999)
   
@@ -180,6 +184,7 @@ filltar <- function(df=.data) {df %>%
 
 
 ```
+
 
 ```{r data,  include=FALSE}
 
@@ -600,22 +605,23 @@ computer administered and in addition to assessing the core literacies
 students completed a questionnaire covering their socio-economic
 background and their wellbeing which we draw on in this study as well.
 The Scottish questionnaires are available to download at
-[[http://www.oecd.org/pisa/publications/UK%20(Scotland).zip]](http://www.oecd.org/pisa/publications/UK%20(Scotland).zip)[(http://www.oecd.org/pisa/publications/UK%20(Scotland).zip)](http://www.oecd.org/pisa/publications/UK%20(Scotland).zip)
+[[http://www.oecd.org/pisa/publications/UK%20(Scotland).zip](http://www.oecd.org/pisa/publications/UK%20(Scotland).zip)](http://www.oecd.org/pisa/publications/UK%20(Scotland).zip)
 . As PISA is aimed at a specific age, it can cover a number of school
 years (grades in PISA terminology) . In Scotland the sample was split
 between S4 and S5 pupils (PISA grades 11 and 12) , the few in other
 years are excluded in our analysis as are any pupils who said they had
-repeated a year. These exclusions reduced the sample from 2998 pupils to
-2802 pupils. Given the complex survey design all analysis incorporates
-replication weights and student weights. The weights are scaled to the
-population rather than the sample hence why in the following the sample
-size is 42,243. Table 1 describes the sample overall and by school year.
-We include four measures of socio-economic position. PISA's summary
-scale is the index of economic, social and cultural status (ESCS). It is
-based on three indices, parental education (International Standard
-Classification of Education[)]{.ul}, parental occupation (International
-Socio-Economic Index) and PISA's home possessions scale. There is some
-imputation for missing data when calculating the ESCS.
+repeated a school year. These exclusions reduced the sample from 2998
+pupils to 2802 pupils. Given the complex survey design all analysis
+incorporates replication weights and student weights. The weights are
+scaled to the population rather than the sample hence why in the
+following the sample size is 42,243. Table 1 describes the sample
+overall and by school year. We include four measures of socio-economic
+position. PISA's summary scale is the index of economic, social and
+cultural status (ESCS). It is based on three indices, parental education
+(International Standard Classification of Education[)]{.ul}, parental
+occupation (International Socio-Economic Index) and PISA's home
+possessions scale. There is some imputation for missing data when
+calculating the ESCS.
 
 ```{r table 1, include=TRUE, message=FALSE}
 knit_print(svytable1)
@@ -628,8 +634,8 @@ As illustrated in Figure 1 Scotland's February / March cut off leads to
 a large jump in the probability of being in S4 as opposed to S5. This
 allows a regression discontinuity design. Figure 2 shows the
 distribution of month of birth and we ran a test to see if there was
-evidence of bunching in the distribution of month of birth at the cut
-point , there does not seem to be
+evidence of bunching in the distribution of month of birth at the school
+starting cut-off , there does not seem to be
 (p=`r round(density_result$results[[3]], 2)`).
 
 ```{r fig1, echo=FALSE, fig.cap="Figure 1 - The probability of being in S4 by date of birth."}
@@ -642,7 +648,7 @@ include_graphics("svyfig2.png")
 
 ```
 
-We will compare those in S5 to S4 in the month either side of the
+We will compare those in S4 to S5 in the month either side of the
 cut-off ,in other words those born in February and March. Table 2 shows
 that those deferring are more likely to be male and (slightly) more
 advantaged. Because deferral is not random we will use month of birth as
@@ -702,9 +708,9 @@ knit_print(svytable4)
 
 We will use a version of instrumental variable analysis that accounts
 for the survey design. As there are large number of outcomes we shall be
-cautious to not over emphasise single "significant" results but take a
-holistic approach to assessing whether their is a consistent pattern of
-results. Additionally our analysis may be underpowered so we will be
+cautious to not over emphasise single "significant" results but to take
+a holistic approach to assessing whether there is a consistent pattern
+of results. Additionally our analysis may be underpowered so we will be
 cautious in claiming no effect when results are imprecise. Although
 missing data is relatively low we will attempt to adjust for this in
 sensitivity analysis using inverse probability weighting
@@ -724,9 +730,9 @@ using quartiles of the continuous socio-economic measures.
     point. This allows us to remove age differences (as in effect we are
     assessing the impact for someone the same age) to assess whether it
     is the main driver of any differences observed in the main analysis.
-    Figure 5 shows the jump in the probability of being in S4 by age at test and 
-    also that their appear to be no systematic differences across the
-    socio-economic background variables by age.
+    Figure 5 shows the jump in the probability of being in S4 by age at
+    test and also that their appear to be no systematic differences
+    across the socio-economic background variables by age.
 
 ```{r fig4, echo=FALSE, fig.cap="Figure 4 - Age at test and month of birth"}
 include_graphics("svyfig3.png")
@@ -739,8 +745,6 @@ include_graphics("svyfig4.png")
 
 
 ```
-
-
 
 #### Outcomes
 
