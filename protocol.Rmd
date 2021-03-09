@@ -2,10 +2,12 @@
 title: "Does school starting age impact well-being and test scores?"
 author: "Frank Popham & Cristina Iannelli"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: word_document
+output:
+  html_document:
+    df_print: paged
 bibliography: ref3.bib
-editor_options: 
-  markdown: 
+editor_options:
+  markdown:
     wrap: 72
 ---
 
@@ -90,9 +92,9 @@ library(rdlocrand)
 library(gtsummary)
 library(gt)
 library(flextable)
-library(tableone)
+library(glue)
 library(mitools)
-library(osfr)
+
 
 options(scipen=999)
   
@@ -182,24 +184,185 @@ filltar <- function(df=.data) {df %>%
   mutate(grade=fct_drop(grade)) 
 }  
 
+svytable1 <- function(df, country, no) {
+  df %>%
+  filltar() %>%
+  tbl_svysummary(by=grade2,
+  statistic = list(all_continuous() ~ "{mean} ({sd})",
+                   all_categorical() ~"{p}%"),
+  label=list(AGE ~ "Age",
+             sex ~ "Sex",
+             HOMEPOS ~ "Home possessions scale",
+             HISEI ~ "Highest Occupation of parents (ISEI)"),
+  missing="no",
+  include=c(grade2, AGE, sex, ESCS, HISEI, HOMEPOS, HISCED)
+  ) %>%
+  add_n(statistic = "{p_miss}%",
+        col_label="**% miss**") %>%
+  add_overall()  %>%
+  as_flex_table() %>%
+  set_caption(caption = glue("Table {no}: Student characteristics
+              in {country} PISA 2018 by grade.")) %>%
+  autofit()
+}
+
+svytable2 <- function(df, country, no) {
+  df %>%
+  filltar() %>%
+  filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
+  mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
+  mutate(month_grade=interaction(grade2, month, sep=" ")) %>%
+  filter(month_grade!="S5 March") %>%
+  mutate(month_grade=fct_drop(month_grade)) %>%
+  tbl_svysummary(by=month_grade,
+  type= AGE ~ "continuous",               
+  statistic = list(all_continuous() ~ "{mean} ({sd})",
+                   all_categorical() ~"{p}%"),
+  label=list(AGE ~ "Age",
+             sex ~ "Sex",
+             HOMEPOS ~ "Home possessions scale",
+             HISEI ~ "Highest Occupation of parents (ISEI)"),
+  missing="no",
+  include=c(month_grade, AGE, sex, ESCS, HISEI, HOMEPOS, HISCED)
+  )  %>%
+  as_flex_table() %>%
+  set_caption(caption = glue("Table {no}: Student characteristics
+              in {country} PISA 2018 by grade and month")) %>%
+  autofit()   
+}
+
+
+svytable3 <- function(df, country, no) {
+  df %>%
+  filltar() %>%
+  filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
+  mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
+  tbl_svysummary(by=month,
+  type= AGE ~ "continuous",               
+  statistic = list(all_continuous() ~ "{mean} ({sd})",
+                   all_categorical() ~"{p}%"),
+  label=list(AGE ~ "Age",
+             sex ~ "Sex",
+             HOMEPOS ~ "Home possessions scale",
+             HISEI ~ "Highest Occupation of parents (ISEI)"),
+  missing="no",
+  include=c(month, AGE, sex, ESCS, HISEI, HOMEPOS, HISCED)
+  )  %>%
+  as_flex_table() %>%
+  set_caption(caption = glue("Table {no}: Student characteristics
+              in {country} PISA 2018 by month")) %>%
+  autofit() 
+}
+
+svyfig1 <- function(df, country) {
+   df %>%
+   filltar() %>%
+  group_by(dob) %>%
+  summarise(mgrade11 = survey_mean(
+    grade=="Grade 11", vartype=c("ci"), proportion = TRUE, na.rm=TRUE)) %>%
+  ggplot(aes(x=dob, y=mgrade11*100, 
+             ymin=mgrade11_low*100, ymax=mgrade11_upp*100)) +
+  geom_point() +
+  geom_linerange() +
+  scale_x_date(date_labels = "%b/%y", date_breaks = "month") +
+  labs(x="Born",
+       y=glue("% in S4(eqv), {country}"))
+}
+
+ svyfig2 <- function(df, country) {
+   df %>%
+   filltar() %>%
+  group_by(dob) %>%
+   survey_count() %>%
+   ggplot(aes(x=dob, y=n)) +
+   geom_col() +
+   scale_x_date(date_labels = "%b/%y", date_breaks = "month") +
+   labs(x="Born",
+       y="N")
+ }   
+ 
+ fsvytable4i <- function(df, sw) {df %>%
+  filltar() %>%
+  mutate("Learning goals"=MASTGOAL, 
+         "Motivation to master tasks"=WORKMAST, 
+         Resilience=RESILIENCE, 
+         "Fear of failure"=GFOFAIL, 
+         "Meaning in life"=EUDMO, 
+         "Positive feelings"=SWBP, 
+         "Life satisfaction"=Lifesat, 
+         "Attitudes to competition"= COMPETE, 
+         "Exposure to bullying"=BEINGBULLIED, 
+         "Student competition"=PERCOMP, 
+         "Student co-operation"=PERCOOP, 
+         "Parents' emotional support"=EMOSUPS, 
+         "Sense of belonging"=BELONG) %>%
+tbl_svysummary(
+  statistic = list(all_continuous() ~ "{mean} ({sd})",
+                   all_categorical() ~"{p}%"),
+  missing="no",
+  include=sw) %>%
+  modify_header(label ~ "**Outcomes**") %>%
+  add_n(statistic = "{p_miss}%",
+        col_label="**% miss")
+ }  
+ 
+flexmygt <- function(gt, cap) {
+  as_flex_table(gt) %>%
+  set_caption(caption = cap) %>%
+  autofit() 
+} 
+ 
+ 
+svytable4 <- function(df, cap, country, no) {tab <- tbl_stack(list(
+                         fsvytable4i(df, sw=c("ST184Q01HA")),
+                         fsvytable4i(df, sw=c("Learning goals",
+                         "Motivation to master tasks", "Resilience",
+                         "Fear of failure", "Meaning in life",
+                         "Positive feelings", "Life satisfaction",
+                         "Attitudes to competition")), 
+                         fsvytable4i(df, sw=c("Exposure to bullying",
+                         "Student competition", "Student co-operation",
+                         "Parents' emotional support", "Sense of belonging"))),
+              group_header = c("Cognitive", "Psychological", "Social")) %>%
+              modify_footnote(all_stat_cols() ~ NA)
+                          flexmygt(tab, glue("Table {no}: {cap} {country}"))}
+ 
+ 
+
+
+ 
+#Based on http://asdfree.com/program-for-international-student-assessment-pisa.html
+pvmeanandci <- function(df, subj) {
+v1 <- df %>%
+  select(ends_with(subj)) 
+m1 <- names(v1$variables) %>%
+        map(~df %>%
+        filltar() %>%
+        rename(res=.data[[.x]])) %>%
+  map(~svymean(~res, design=.x)) %>%
+  MIcombine() 
+  ci <- confint(m1)
+  tibble("Mean" = round(m1$coefficients[["res"]]),
+         "LCI" = round(ci[1,1]),
+         "UCI" = round(ci[1,2]))
+} 
+
+svytable5 <- function(df, country, no) {bind_rows(
+                      "Maths"=pvmeanandci(df, "MATH"), 
+                       "Reading"=pvmeanandci(df, "READ"), 
+                       "Science"=pvmeanandci(df, "SCIE"), 
+                        .id="Subject") %>%
+  flextable() %>%
+  fontsize(size = 9, part="all") %>%
+  set_caption(caption = glue("Table {no}: 
+                             PISA assessment scores for {country} 2018")) %>%
+  autofit()  
+}
 
 ```
 
-
 ```{r data,  include=FALSE}
 
-#2015 
-
-#unzip("PUF_SPSS_COMBINED_CMB_STU_QQQ.zip")
-
-#allpisadf2015 <- read_sav("CY6_MS_CMB_STU_QQQ.sav") 
-#gbrpisadf2015 <-   allpisadf2015 %>%
-#  filter(CNTRYID==826) 
-
-#remove(allpisadf2015)
-
-#remove(allpisadf2015)
-#gc() #free ram
 
 
 #2018 
@@ -262,329 +425,91 @@ ex4 <- scotpisadf2018 %>%
 group_by(repeat3) %>%
 summarise(n())
   
-
-
-
 #tables
 theme_gtsummary_compact()
-svytable1 <- scotpisadf2018 %>%
-  filltar() %>%
-  tbl_svysummary(by=grade2,
-  statistic = list(all_continuous() ~ "{mean} ({sd})",
-                   all_categorical() ~"{p}%"),
-  label=list(AGE ~ "Age",
-             sex ~ "Sex",
-             HOMEPOS ~ "Home possessions scale",
-             HISEI ~ "Highest Occupation of parents (ISEI)"),
-  missing="no",
-  include=c(grade2, AGE, sex, ESCS, HISEI, HOMEPOS, HISCED)
-  ) %>%
-  add_n(statistic = "{p_miss}%",
-        col_label="**% miss**") %>%
-  add_overall()  %>%
-  as_flex_table() %>%
-  set_caption(caption = "Table 1: Student characteristics
-              in Scotland PISA 2018 by grade.") %>%
-  autofit() 
-  
-  
-
-svytable2 <- scotpisadf2018 %>%
-  filltar() %>%
-  filter(dob >= ymd("2002_09_01") & dob <=ymd("2003_02_01")) %>%
-  mutate(Defer=if_else(grade=="Grade 11", "Yes", "No")) %>%
-  tbl_svysummary(by=Defer,
-  type= AGE ~ "continuous",               
-  statistic = list(all_continuous() ~ "{mean} ({sd})",
-                   all_categorical() ~"{p}%"),
-  label=list(AGE ~ "Age",
-             sex ~ "Sex",
-             HOMEPOS ~ "Home possessions scale",
-             HISEI ~ "Highest Occupation of parents (ISEI)"),
-  missing="no",
-  include=c(Defer, AGE, sex, ESCS, HISEI, HOMEPOS, HISCED)
-  ) %>%
-  add_overall()   
-
-svytable3 <- scotpisadf2018 %>%
-  filltar() %>%
-  filter(dob >= ymd("2003_01_01") & dob <=ymd("2003_02_01")) %>%
-  mutate(Defer=if_else(grade=="Grade 11", "Yes", "No")) %>%
-  tbl_svysummary(by=Defer,
-  type= AGE ~ "continuous",               
-  statistic = list(all_continuous() ~ "{mean} ({sd})",
-                   all_categorical() ~"{p}%"),
-  label=list(AGE ~ "Age",
-             sex ~ "Sex",
-             HOMEPOS ~ "Home possessions scale",
-             HISEI ~ "Highest Occupation of parents (ISEI)"),
-  missing="no",
-  include=c(Defer, AGE, sex, ESCS, HISEI, HOMEPOS, HISCED)
-  ) %>%
-  add_overall()   
-
-svytable4 <- scotpisadf2018 %>%
-  filltar() %>%
-  filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
-  mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
-  tbl_svysummary(by=month,
-  type= AGE ~ "continuous",               
-  statistic = list(all_continuous() ~ "{mean} ({sd})",
-                   all_categorical() ~"{p}%"),
-  label=list(AGE ~ "Age",
-             sex ~ "Sex",
-             HOMEPOS ~ "Home possessions scale",
-             HISEI ~ "Highest Occupation of parents (ISEI)"),
-  missing="no",
-  include=c(month, AGE, sex, ESCS, HISEI, HOMEPOS, HISCED)
-  )  %>%
-  as_flex_table() %>%
-  set_caption(caption = "Table 2 Student characteristics by month at cut off") %>%
-  autofit() 
-
-svytable4_SD <- scotpisadf2018 %>%
-  filltar() %>%
-  filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
-  mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
-  mutate(a=HISCED=="None", b=HISCED=="ISCED 1", c=HISCED=="ISCED 2",
-         d=HISCED=="ISCED 3B, C", e=HISCED=="ISCED 3A, ISCED 4",
-         f=HISCED=="ISCED 5B", g=HISCED=="ISCED 5A, 6") %>%
-  svyCreateTableOne(c("AGE", "sex", "ESCS", "HISEI", "HOMEPOS", "HISCED", "a",
-                      "b", "c", "d", "e", "f", "g"),
-                    strata="month", data=., smd=TRUE)
-
-  svytable4_SD <- print(svytable4_SD, smd=TRUE)          
 
 
 
-svytable5 <- scotpisadf2018 %>%
-  filltar() %>%
-  filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
-  mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
-  mutate(month_grade=interaction(grade2, month, sep=" ")) %>%
-  filter(month_grade!="S5 March") %>%
-  mutate(month_grade=fct_drop(month_grade)) %>%
-  tbl_svysummary(by=month_grade,
-  type= AGE ~ "continuous",               
-  statistic = list(all_continuous() ~ "{mean} ({sd})",
-                   all_categorical() ~"{p}%"),
-  label=list(AGE ~ "Age",
-             sex ~ "Sex",
-             HOMEPOS ~ "Home possessions scale",
-             HISEI ~ "Highest Occupation of parents (ISEI)"),
-  missing="no",
-  include=c(month_grade, AGE, sex, ESCS, HISEI, HOMEPOS, HISCED)
-  )  %>%
-  as_flex_table() %>%
-  set_caption(caption = "Table 3 Student characteristics
-              by grade and month at cut off") %>%
-  autofit()   
+table1a <- svytable1(scotpisadf2018, "Scotland", "1a")
+table1b <- svytable1(engpisadf2018, "England", "1b")
 
- svyfig1 <- scotpisadf2018 %>%
-   filltar() %>%
-  group_by(dob) %>%
-  summarise(mgrade11 = survey_mean(grade=="Grade 11", vartype=c("ci"), proportion = TRUE, na.rm=TRUE)) %>%
-  ggplot(aes(x=dob, y=mgrade11*100, 
-             ymin=mgrade11_low*100, ymax=mgrade11_upp*100)) +
-  geom_point() +
-  geom_linerange() +
-  scale_x_date(date_labels = "%b/%y", date_breaks = "month") +
-  labs(x="Born",
-       y="% in S4")
- ggsave("svyfig1.png", width=16, height=16, units="cm")
+table2a <- svytable2(scotpisadf2018, "Scotland", "2a")
+table2b <- svytable2(engpisadf2018, "England", "2b")
+
+table3a <- svytable3(scotpisadf2018, "Scotland", "3a")
+table3b <- svytable3(engpisadf2018, "England", "3b")
  
+
+
+fig1 <- ggarrange(svyfig1(scotpisadf2018, "Scotland"),
+                  svyfig1(engpisadf2018, "England"),
+                          nrow=2, labels=(list("Scotland", "England")),
+                          vjust=3, hjust=-1)
+
+ggsave("fig1.png", width=16, height=16, units="cm")
  
-  svyfig1eng <- engpisadf2018 %>%
-   filltar() %>%
-  group_by(dob) %>%
-  summarise(mgrade11 = survey_mean(grade=="Grade 11", vartype=c("ci"), proportion = TRUE, na.rm=TRUE)) %>%
-  ggplot(aes(x=dob, y=mgrade11*100, 
-             ymin=mgrade11_low*100, ymax=mgrade11_upp*100)) +
-  geom_point() +
-  geom_linerange() +
-  scale_x_date(date_labels = "%b/%y", date_breaks = "month") +
-  labs(x="Born",
-       y="% in S4 (Eng equivalent")
- ggsave("svyfig1eng.png", width=16, height=16, units="cm")
+fig2 <- ggarrange(svyfig2(scotpisadf2018, "Scotland"),
+                  svyfig2(engpisadf2018, "England"),
+                          nrow=2, labels=(list("Scotland", "England")),
+                          vjust=1.5, hjust=-1)
+ggsave("fig2.png", width=16, height=16, units="cm")
+
+
  
- 
- dob2 <- scotpisadf2018 %>%
+dfdob2 <- scotpisadf2018 %>%
   filltar() %>%
   mutate(dob2=as.period(interval(ymd("2003-03-01"),dob))) %>%
   mutate(dob2=as.numeric(dob2, "months")) %>%
   mutate(dob2=if_else(dob2>=0, dob2+1, dob2)) %>%
-  select(dob2)
+  select(dob2) %>%
+  as.tibble() 
 
-density_result <-  rdwinselect(dob2$variables[["dob2"]], wmin=1, nwindows=1)
-
-
- svyfig2 <- scotpisadf2018 %>%
-   filltar() %>%
-  group_by(dob) %>%
-   survey_count() %>%
-   ggplot(aes(x=dob, y=n)) +
-   geom_col() +
-   scale_x_date(date_labels = "%b/%y", date_breaks = "month") +
-   labs(x="Born",
-       y="N")
-   ggsave("svyfig2.png", width=16, height=16, units="cm")
- 
- 
+density_result <-  rdwinselect(dfdob2$dob2, wmin=1, nwindows=1)
 
 
-svyfig3 <- scotpisadf2018 %>%
-   filltar() %>%
-  group_by(AGE, dob) %>%
-   survey_tally() %>%
-   ggplot(aes(x=AGE, y=dob, size=n)) +
-   geom_point() +
-   scale_x_reverse() +
-   scale_y_date(date_labels = "%b/%y", date_breaks = "month") +
-   labs(y="Born",
-        X="Age") +
-  ggsave("svyfig3.png", width=16, height=16, units="cm")
+table4a <- svytable4(scotpisadf2018, 
+                     "Wellbeing Outcomes PISA 2018", "Scotland",
+                     "4a")
 
- 
-  
-svyfig4 <- scotpisadf2018 %>%
-   filltar() %>%
-  filter(AGE<16.33) %>%
-  group_by(AGE) %>%
-  summarise(S4 = survey_mean(grade=="Grade 11", vartype=c("ci"), 
-                                  proportion = TRUE, na.rm=TRUE),
-            ISEI = survey_mean(HISEI, vartype=c("ci"), na.rm=TRUE),
-            ESCS = survey_mean(ESCS, vartype=c("ci"), na.rm=TRUE),
-            HOMEPOS = survey_mean(HOMEPOS, vartype=c("ci"), na.rm=TRUE),
-            Female = survey_mean(sex=="Female", vartype=c("ci"), 
-                              proportion = TRUE, na.rm=TRUE),
-            Degree = survey_mean(HISCED=="ISCED 5A, 6", vartype=c("ci"), 
-                              proportion = TRUE, na.rm=TRUE)) %>%
-  pivot_longer(cols=-AGE,names_to="var", values_to = "count") %>%
-  separate(var, c("var", "stat")) %>%
-  mutate(stat=if_else(is.na(stat), "mean", stat)) %>%
-  pivot_wider(names_from = "stat", values_from = count) %>%
-  ggplot(aes(x=AGE, y=mean, 
-             ymin=low, ymax=upp)) +
-  geom_point() +
-  geom_linerange() +
-    scale_x_reverse() +
-  facet_wrap(vars(var), scales = "free_y", nrow = 3, ncol=2) +
-  labs(y="",
-       x="Age",
-       caption="Very few cases aged 16.33 have been excluded to avoid graph distortion")
-ggsave("svyfig4.png", width=16, height=21, units="cm")
-
- 
+table4b <- svytable4(engpisadf2018,
+                     "Wellbeing Outcomes PISA 2018", "England",
+                     "4b")
 
 
+indlist <- list("ST184Q", "ST208Q", "ST182Q", "ST188Q", "ST183Q", "ST185Q", 
+             "ST186Q", "Life satisfaction", "ST181Q", "ST038Q", "ST205Q",
+             "ST206Q", "ST123Q", "ST034Q")
 
- 
- 
- 
- 
+labellist <- list("Cognitive wellbeing", "Learning goals",
+               "Motivation to master tasks",
+               "Resilience (or self-efficacy)",
+               "Fear of failure", "Meaning in life",
+               "Positive feelings", "Life satisfaction",
+               "Attitudes to competition", 
+               "Exposure to bullying",
+               "Student competition",
+               "Student co-operation",
+               "Parents' emotional support", 
+               "Sense of belonging")
 
-fsvytable6 <- function(sw) {scotpisadf2018 %>%
-  filltar() %>%
-  mutate("Learning goals"=MASTGOAL, "Motivation to master tasks"=WORKMAST, Resilience=RESILIENCE, "Fear of failure"=GFOFAIL, "Meaning in life"=EUDMO, "Positive feelings"=SWBP, "Life satisfaction"=Lifesat, "Attitudes to competition"= COMPETE, "Exposure to bullying"=BEINGBULLIED, "Student competition"=PERCOMP, "Student co-operation"=PERCOOP, "Parents' emotional support"=EMOSUPS, "Sense of belonging"=BELONG) %>%
-tbl_svysummary(
-  statistic = list(all_continuous() ~ "{mean} ({sd})",
-                   all_categorical() ~"{p}%"),
-  missing="no",
-  include=sw) %>%
-  modify_header(label ~ "**Outcomes**") %>%
-  add_n(statistic = "{p_miss}%",
-        col_label="**% miss")
-}  
+nolist1 <- seq(1,27,2)
+nolist2 <- seq(2,28,2)
 
-flexmygt <- function(gt, cap) {
-  as_flex_table(gt) %>%
-  set_caption(caption = cap) %>%
-  autofit() 
-}
-svytable6a <- fsvytable6(sw=c("ST184Q01HA"))
-svytable6b <- fsvytable6(sw=c("Learning goals", "Motivation to master tasks", "Resilience", "Fear of failure", "Meaning in life", "Positive feelings", "Life satisfaction","Attitudes to competition"))
-svytable6c <- fsvytable6(sw=c("Exposure to bullying", "Student competition", "Student co-operation", "Parents' emotional support", "Sense of belonging"))
+table4_scot <-  pmap(list(indlist, labellist, nolist1),
+                     ~fsvytable4i(scotpisadf2018, starts_with(..1)) %>%
+                      flexmygt(glue("Table A{..3}: {..2} Scotland")))
 
-svytable6 <- tbl_stack(list(svytable6a, svytable6b, svytable6c),
-              group_header = c("Cognitive", "Psychological", "Social")) %>%
-              modify_footnote(all_stat_cols() ~ NA)
+names(table4_scot) <- glue("A{nolist1}")
 
+table4_eng <-  pmap(list(indlist, labellist, nolist2),
+                     ~fsvytable4i(engpisadf2018, starts_with(..1)) %>%
+                      flexmygt(glue("Table A{..3}: {..2} England")))
 
+names(table4_eng) <- glue("A{nolist2}")
 
-svytable6 <- flexmygt(svytable6, "Table 4 Wellbeing Outcomes")
+table5a <- svytable5(scotpisadf2018, "Scotland", "5a")
+table5b <- svytable5(engpisadf2018, "England", "5b")
 
-svytable6_cog <- fsvytable6(starts_with("ST184Q")) %>%
-  flexmygt("Table A1 Cognitive wellbeing")
-  
-svytable6_learn <- fsvytable6(starts_with("ST208Q")) %>%
-  flexmygt("Table A2 Learning goals")
-svytable6_motiv <- fsvytable6(starts_with("ST182Q")) %>%
-  flexmygt("Table A3 Motivation to master tasks") 
-svytable6_resil <- fsvytable6(starts_with("ST188Q")) %>%
-  flexmygt("Table A4 Resilience (or self-efficacy)") 
-svytable6_fail <- fsvytable6(starts_with("ST183Q")) %>% 
-  flexmygt("Table A5 Fear of failure")
-svytable6_mean <- fsvytable6(starts_with("ST185Q")) %>%
-  flexmygt("Table A6 Meaning in life")
-svytable6_pfeel <- fsvytable6(starts_with("ST186Q")) %>% 
-  flexmygt("Table A7 Positive feelings")
-svytable6_satis <- fsvytable6(starts_with("Life satisfaction")) %>%
-  flexmygt("Table A8 Life satisfaction")
-svytable6_comp <-  fsvytable6(starts_with("ST181Q")) %>% 
-  flexmygt("Table A9 Attitudes to competition")
-svytable6_bully <-  fsvytable6(starts_with("ST038Q")) %>% 
-  flexmygt("Table A10 Exposure to bullying")
-svytable6_stucomp <- fsvytable6(starts_with("ST205Q")) %>% 
-  flexmygt("Table A11 Student competition")
-svytable6_coop <-  fsvytable6(starts_with("ST206Q")) %>%  
-  flexmygt("Table A12 Student co-operation")
-svytable6_supp <- fsvytable6(starts_with("ST123Q")) %>%  
-  flexmygt("Table A13 Parents' emotional support")
-svytable6_belong <- fsvytable6(starts_with("ST034Q")) %>%  
-  flexmygt("Table A14 Sense of belonging")
-
-
-#Based on http://asdfree.com/program-for-international-student-assessment-pisa.html
-pvmeanandci <- function(test) {
-v1 <- scotpisadf2018 %>%
-  select(ends_with(test)) 
-m1 <- names(v1$variables) %>%
-        map(~scotpisadf2018 %>%
-        filltar() %>%
-        rename(res=.data[[.x]])) %>%
-  map(~svymean(~res, design=.x)) %>%
-  MIcombine() 
-  ci <- confint(m1)
-  tibble("Mean" = round(m1$coefficients[["res"]]),
-         "LCI" = round(ci[1,1]),
-         "UCI" = round(ci[1,2]))
-}
-
-math <- pvmeanandci("MATH")
-read <- pvmeanandci("READ")
-science <- pvmeanandci("SCIE")
-  
-svytable7 <- bind_rows("Math"=math, 
-                       "Reading"=read, 
-                       "Science"=science, 
-                        .id="Subject") %>%
-            gt(rowname_col="Subject") %>%
-       cols_label(
-   Mean = md("**Mean**"),
-    LCI = md("**Lower CI**"),
-    UCI = md("**Upper CI**")
-  ) %>%
-  tab_style(style=cell_text(size="small"),
-            locations=cells_body()) %>%
-  tab_header(title = "Table 18 PISA assessment scores") 
-
-  
- 
-  
-
-
-
-    
 ```
 
 ### Method
@@ -614,7 +539,7 @@ repeated a school year. These exclusions reduced the sample from 2998
 pupils to 2802 pupils. Given the complex survey design all analysis
 incorporates replication weights and student weights. The weights are
 scaled to the population rather than the sample hence why in the
-following the sample size is 42,243. Table 1 describes the sample
+following table the sample size is 42,243. Table 1 describes the sample
 overall and by school year. We include four measures of socio-economic
 position. PISA's summary scale is the index of economic, social and
 cultural status (ESCS). It is based on three indices, parental education
@@ -624,7 +549,9 @@ possessions scale. There is some imputation for missing data when
 calculating the ESCS.
 
 ```{r table 1, include=TRUE, message=FALSE}
-knit_print(svytable1)
+knit_print(table1a)
+
+knit_print(table1b)
 
 ```
 
@@ -635,16 +562,16 @@ a large jump in the probability of being in S4 as opposed to S5. This
 allows a regression discontinuity design. Figure 2 shows the
 distribution of month of birth and we ran a test to see if there was
 evidence of bunching in the distribution of month of birth at the school
-starting cut-off , there does not seem to be
+starting cut-off, there does not seem to be
 (p=`r round(density_result$results[[3]], 2)`).
 
 ```{r fig1, echo=FALSE, fig.cap="Figure 1 - The probability of being in S4 by date of birth."}
-include_graphics("svyfig1.png")
+include_graphics("fig1.png")
 
 ```
 
 ```{r fig2, echo=FALSE, fig.cap="Figure 2 - The distribution of month of birth"}
-include_graphics("svyfig2.png")
+include_graphics("fig2.png")
 
 ```
 
@@ -657,8 +584,7 @@ Instrumental analysis has the following three assumptions.
 
 ```{r table 2, include=TRUE, message=FALSE}
 
-knit_print(svytable5)
-
+knit_print(table2a)
 
 ```
 
@@ -683,24 +609,21 @@ all pupils in PISA are in the same year.
 3.  Being either side of the cut and the outcomes do not share common
     cause.
 
-Although there is some evidence that season of birth might be affected
-by socio-economic position, month to month variation seems less likely.
-As Table 4 shows those born in February are very similar in
-socio-economic profile to those born in March with some minor
-differences in education background.
+Although there is evidence that season of birth might be affected by
+socio-economic position [@Buckles2013], systematic month to next month
+variation seems less likely. As Table 4 shows those born in February are
+very similar in socio-economic profile to those born in March with some
+minor differences in education background.
 
-```{r fig3, echo=FALSE, fig.cap="Figure 3 - The probability of being in S4 equivalent in England  by date of birth"}
-include_graphics("svyfig1eng.png")
 
-```
 
 ```{r table 3, include=TRUE, message=FALSE}
 
-
-knit_print(svytable4)
-
-
+knit_print(table3a)
+knit_print(table3b)
 ```
+
+
 
 \newpage
 
@@ -713,7 +636,7 @@ a holistic approach to assessing whether there is a consistent pattern
 of results. Additionally our analysis may be underpowered so we will be
 cautious in claiming no effect when results are imprecise. Although
 missing data is relatively low we will attempt to adjust for this in
-sensitivity analysis using inverse probability weighting
+sensitivity analysis using inverse probability weighting.
 
 To test for effect modification by socio-economic background we shall
 interact grade with our socio-economic variables. We will see whether
@@ -724,27 +647,6 @@ using quartiles of the continuous socio-economic measures.
 
 -   Extend analysis to include January born pupils in the control group.
 
--   Use age as test as the forcing variable instead of month of birth.
-    It is not collinear with month of birth (see Figure 4) as fieldwork
-    for PISA happens over a 3 month period but does jump at the cut
-    point. This allows us to remove age differences (as in effect we are
-    assessing the impact for someone the same age) to assess whether it
-    is the main driver of any differences observed in the main analysis.
-    Figure 5 shows the jump in the probability of being in S4 by age at
-    test and also that their appear to be no systematic differences
-    across the socio-economic background variables by age.
-
-```{r fig4, echo=FALSE, fig.cap="Figure 4 - Age at test and month of birth"}
-include_graphics("svyfig3.png")
-
-
-```
-
-```{r fig5, echo=FALSE, fig.cap="Figure 5 - S4 probability and confounder distribution by age at test."}
-include_graphics("svyfig4.png")
-
-
-```
 
 #### Outcomes
 
@@ -766,7 +668,20 @@ questions are in Tables A1 to A14 in the appendix.
 
 ```{r table 4, include=TRUE, message=FALSE}
 
-knit_print(svytable6)
+knit_print(table4a)
+knit_print(table4b)
+```
+
+##### Ability
+
+PISA measures academic ability in three core subject areas, maths,
+reading and science. As students answer different subsets of the
+questions for each subject, multiple imputation is used to combine the
+10 plausible values for each student on each scale in PISA.
+
+```{r pisa}
+knit_print(table5a)
+knit_print(table5b)
 
 ```
 
@@ -774,10 +689,10 @@ knit_print(svytable6)
 
 **Cognitive**
 
-```{r table A1, include=TRUE, message=FALSE}
+```{r table A1A", include=TRUE, message=FALSE}
 
-knit_print(svytable6_cog)
-
+knit_print(table4_scot[["A1"]])
+knit_print(table4_eng[["A2"]])
 ```
 
 **Psychological**
@@ -786,108 +701,56 @@ Students were asked about the following eight domains of psychological
 well being most of which contain a number of questions
 
 -   Learning goals
-
-```{r table A2, include=TRUE, message=FALSE}
-
-knit_print(svytable6_learn)
-
-```
-
 -   Motivation to master tasks
-
-```{r table A3, include=TRUE, message=FALSE}
-
-knit_print(svytable6_motiv)
-
-```
-
 -   Resilience (or self-efficacy)
-
-```{r table A4, include=TRUE, message=FALSE}
-
-knit_print(svytable6_resil)
-
-```
-
 -   Fear of failure
-
-```{r table A5, include=TRUE, message=FALSE}
-
-knit_print(svytable6_fail)
-
-```
-
 -   Meaning in life
-
-```{r table A6, include=TRUE, message=FALSE}
-
-knit_print(svytable6_mean)
-
-```
-
 -   Positive feelings
-
-```{r table A7, include=TRUE, message=FALSE}
-
-knit_print(svytable6_pfeel)
-
-```
-
 -   Life satisfaction
-
-```{r table A8, include=TRUE, message=FALSE}
-
-knit_print(svytable6_satis)
-
-```
-
 -   Attitudes to competition
 
-```{r table A9, include=TRUE, message=FALSE}
+```{r table A3:A18, include=TRUE, message=FALSE}
 
-knit_print(svytable6_comp)
+knit_print(table4_scot[["A3"]])
+knit_print(table4_eng[["A4"]])
+knit_print(table4_scot[["A5"]])
+knit_print(table4_eng[["A6"]])
+knit_print(table4_scot[["A7"]])
+knit_print(table4_eng[["A8"]])
+knit_print(table4_scot[["A9"]])
+knit_print(table4_eng[["A10"]])
+knit_print(table4_scot[["A11"]])
+knit_print(table4_eng[["A12"]])
+knit_print(table4_scot[["A13"]])
+knit_print(table4_eng[["A14"]])
+knit_print(table4_scot[["A15"]])
+knit_print(table4_eng[["A16"]])
+knit_print(table4_scot[["A17"]])
+knit_print(table4_eng[["A18"]])
 
 ```
 
 **Social**
 
 -   Exposure to bullying
-
-```{r table A10, include=TRUE, message=FALSE}
-
-knit_print(svytable6_bully)
-
-```
-
 -   Student competition
-
-```{r table A11, include=TRUE, message=FALSE}
-
-knit_print(svytable6_stucomp)
-
-```
-
 -   Student co-operation
-
-```{r table A12, include=TRUE, message=FALSE}
-
-knit_print(svytable6_coop)
-
-```
-
 -   Parents' emotional support
-
-```{r table A13, include=TRUE, message=FALSE}
-
-knit_print(svytable6_supp)
-
-```
-
 -   Sense of belonging scale
 
-```{r table A14, include=TRUE, message=FALSE}
+```{r table A19:A28, include=TRUE, message=FALSE}
 
-knit_print(svytable6_belong)
+knit_print(table4_scot[["A19"]])
+knit_print(table4_eng[["A20"]])
+knit_print(table4_scot[["A21"]])
+knit_print(table4_eng[["A22"]])
+knit_print(table4_scot[["A23"]])
+knit_print(table4_eng[["A24"]])
+knit_print(table4_scot[["A25"]])
+knit_print(table4_eng[["A26"]])
+knit_print(table4_scot[["A27"]])
+knit_print(table4_eng[["A28"]])
+
 
 ```
 
