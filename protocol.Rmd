@@ -1,10 +1,13 @@
 ---
-title: "Does school starting age impact well-being and test scores?"
+title: The impact of school starting age on young people's well-being and educational
+  performance. Protocol.
 author: "Frank Popham & Cristina Iannelli"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
+  word_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 bibliography: ref3.bib
 editor_options:
   markdown:
@@ -13,68 +16,104 @@ editor_options:
 
 ### Introduction
 
-One potential role of the school system is to decrease inequalities in
-the resources for learning between socioeconomically advantaged and
-disadvantaged children. A young school starting age may help more
-disadvantaged children by compensating for their more limited learning
-resources at home. However there is danger with such an approach, as
-there is evidence that being relatively young in a school year is a
-disadvantage that could even offset any additional benefit of starting
-school early. For more advantaged children when they start school or are
+There is international variation in when children start primary
+schooling with continuing debate about the optimal age [@oecd2016]. Some
+stress the importance of a later start for children to allow them to
+learn through play for a longer period and to increase their readiness
+to school. Others instead highlight that children are capable to learn
+from early ages and that learning basic reading, writing and numeracy
+skills enable children to get a head start in learning. In addition,
+there are reasons to believe that the start age of school may matter for
+social inequalities in educational and well-being outcomes. Since there
+is often some discretion about the time children can start school, there
+may be differences in the extent to which parents with different
+socio-economic resources exercise this discretion, with more socially
+advantaged parents delaying entry of their children if they deem them
+too young or not ready for school. Latest figures for Scotland confirm
+that this is the case here [@sg2020]. If starting school early is
+detrimental then this disadvantage may be falling disproportionately on
+the more disadvantaged. On the other hand, an early school starting age
+may help more disadvantaged children by compensating for their more
+limited learning resources at home. However, there are potential
+negative consequences of this choice, as there is evidence that being
+relatively young in a school year is a disadvantage that could even
+offset any additional benefit of starting school early. For more
+advantaged children, at which age they start school and whether they are
 younger in the year may be less important as home resources can
-compensate. For example, Suziedelytea and Zhu [@SUZIEDELYTE201576] found
-that while early school starting age had positive impacts for cognitive
-ability in young primary school children in Australia, particularly
-those disadvantaged, it had negative impacts on social development
-across the socioeconomic spectrum. In Scotland, children whose 4th
-birthday is in February will normally start school that August while
-those born March onward will start the following August. Pupils not aged
-five by the August start can delay school a year with those born in
-January and February who delay automatically entitled to an extra year
-of nursery provision however this is discretionary for those born
-September to December. Latest figures for Scotland show that
-socio-economic more advantaged parents are more likely to defer their
-child's start [@sg2020].
+compensate. Suziedelytea and Zhu [-@SUZIEDELYTE201576] found that while
+early school starting age had positive impacts for cognitive ability in
+young primary school children in Australia, particularly those
+disadvantaged, it had negative impacts on social development across the
+socio-economic spectrum.
 
-While much work in Scotland has been conducted on pupils social and
-emotional in Scotland in recent years and some focus has been paid to
-school readiness and starting age, most reports associations rather than
-a causal focus . This is a significant gap as there is consistent
-evidence from natural experiment studies in other countries that school
-starting age can affect the likelihood of mental health problems and of
-a diagnosis of attention deficit hyperactivity disorder (ADHD)
+#### Background
+
+Children in Scotland are among the youngest in Europe to start school.
+They usually start when they are between four and a half and five and a
+half years old. There is a longstanding debate whether this early start
+may be detrimental for children. Most recently an increase in school
+starting age to 7 has been advocated following countries such as
+Finland, a country that performs comparatively well in terms of student
+outcomes
+(<https://greens.scot/news/scottish-greens-kids-should-start-school-at-seven>).
+In Scotland, children whose 5th birthday is between March and August
+will normally start school in August of the same year while those born
+between 1 September and the end of February will start in August in the
+year before they turn 5. These latter children can delay entry to school
+by a year, with those born in January and February automatically
+entitled to an extra year of funded nursery provision (this funded
+provision is dependent on their local council's approval for those born
+in September-December). A major part of the Scottish Government's
+*"Getting it right for every child"* strategy is improving wellbeing ,
+this wellbeing framework is in turn linked to efforts to improve
+academic performance and reduce the socio-economic performance gap
+(<https://www.gov.scot/policies/girfec/>). While much work in Scotland
+has been conducted on pupils' social and emotional wellbeing in recent
+years and some focus has been paid to school readiness and starting age,
+most reports are associational rather than having a causal focus
+[@sgreview2018; @sg2012]. This is a significant gap as there is
+consistent evidence from natural experiment studies in other countries
+that school starting age can affect wellbeing and educational
+performnace.
+
+Crawford et al. [-@crawford2014] outline the four possible mechanisms
+through which age at starting school might impact education and
+wellbeing outcomes: age at test, age of starting school, length of
+schooling and relative age. As exams are generally taken at the same
+time, age at test may be an important mechanism. By studying tests taken
+at the same age, they showed that most of the effect of starting age on
+test performance in England was through age at test. Analysis of
+England's PISA test scores (where the sample is age selected so age at
+test is less of a factor) found little impact of school starting
+cut-off, this was interpreted as an extra year of schooling (length of
+schooling) having little effect [@Luyten2008; @benton2014]. It could
+also be driven by age of starting school or relative age effects or a
+combination of all three offsetting. Luyten et al. [-@Luyten2008]
+suggest that any positive effect of being in a higher grade was greatest
+in more disadvantaged pupils. This raises the possibility of a trade off
+between better test scores and worse mental wellbeing especially for
+disadvantaged pupils. However, a regression discontinuity study from
+England found that an earlier school start improved performance and
+reduced the socio-economic gap for both academic performance and
+"non-cognitive" outcomes although by age 11 the academic effects had
+worn off [@Cornelissen2019]. Literature exploring how school starting
+age affects relative age within the school year consistently finds
+mental health problems and a diagnosis of attention deficit
+hyperactivity disorder (ADHD) to be higher in young for year pupils
 [@Dee2018; @chen2015; @ELDER2010641; @EVANS2010657; @SCHWANDT201672].
-Here it is school starting age affecting relative age within the school
-year that is the studied mechanism. Most studies assess these affects by
-socioeconomic background finding that impacts across the socioeconomic
-spectrum but sometimes less so in those more advantaged [@Dee2018;
-@chen2015; @ELDER2010641; @EVANS2010657]. A German study suggests that
-more educated parents may be more likely to seek an ADHD diagnosis got
-their young for year child but recognizes their evidence for this is
-weak [@SCHWANDT201672]. Crawford et al. [-@crawford2014] outline the
-four possible mechanisms through which age at starting school might
-impact education and wellbeing outcomes: age at test, age of starting
-school, length of schooling and relative age. As exams are generally
-taken at the same time, age at test may be an important mechanism. By
-studying test taken at the same age, they showed that most of the effect
-of starting age on test performance in England was through age at test.
-Analysis of England's PISA test scores (where the sample is age selected
-so age at test is less of a factor) found little impact of school
-starting cut-off, this was interpreted as an extra year of schooling
-(length of schooling) having little effect [@Luyten2008; @benton2014].
-It could also be driven by age of starting school or relative age
-effects or a combination of all three offsetting. Luyten et al.
-[-@Luyten2008] suggest that any positive effect of being in a higher
-grade was greatest in more disadvantaged pupils. This raises the
-possibility of a trade off between better test scores and worse mental
-wellbeing especially for disadvantaged pupils
+Most studies assess these effects by socio-economic background finding
+impacts across the socio-economic spectrum but sometimes less so in
+those more advantaged [@Dee2018; @chen2015; @ELDER2010641;
+@EVANS2010657]. A German study suggests that more educated parents may
+be more likely to seek an ADHD diagnosis for their young for year child
+but recognizes their evidence for this is weak [@SCHWANDT201672].
 
-The Scottish Green Party has recently advocated a school starting age of
-7 for academic and wellbeing reasons
-<https://greens.scot/news/scottish-greens-kids-should-start-school-at-seven>
-. The policy was informed by a commission review of international
-studies [@bradfield2021] but does not include direct evidence from
-Scotland.
+#### Research questions
+
+1.  Does starting school at an older age improve academic performance
+    and well-being at age 15?
+2.  Does the starting school age matter for social inequalities in
+    educational and well-being outcomes?
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, eval = TRUE)
@@ -86,14 +125,18 @@ library(broom)
 library(survey)
 library(srvyr)
 library(ggpubr)
-library(rdrobust)
-library(rddensity)
 library(rdlocrand)
 library(gtsummary)
 library(gt)
 library(flextable)
 library(glue)
 library(mitools)
+
+
+# automatically create a bib database for R packages
+#write_bib(c(
+#  .packages(), "knitr", "rmarkdown", "tidyverse", "haven", "lubridate", "broom", #"survey", "srvyr", "ggpubr", "rddensity", "gtsummary", "gt", "flextable", "glue", #"mitools"
+#), "packages.bib")
 
 
 options(scipen=999)
@@ -184,7 +227,7 @@ filltar <- function(df=.data) {df %>%
   mutate(grade=fct_drop(grade)) 
 }  
 
-svytable1 <- function(df, country, no) {
+svytable2 <- function(df, country, no) {
   df %>%
   filltar() %>%
   tbl_svysummary(by=grade2,
@@ -206,7 +249,7 @@ svytable1 <- function(df, country, no) {
   autofit()
 }
 
-svytable2 <- function(df, country, no) {
+svytable1 <- function(df, country, no) {
   df %>%
   filltar() %>%
   filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
@@ -363,16 +406,19 @@ svytable5 <- function(df, country, no) {bind_rows(
 
 ```{r data,  include=FALSE}
 
+# Download data (SPSS format) from OECD website. File is large. 
 
-
-#2018 
+#download.file("https://webfs.oecd.org/pisa2018/SAS_STU_QQQ.zip", 
+#              "SPSS_STU_QQQ.zip") 
 #unzip("SPSS_STU_QQQ.zip")
-# scot
+
+
+# scotland
 allpisadf2018 <- read_sav("STU/CY07_MSU_STU_QQQ.sav") 
 scotpisadf2018 <-   allpisadf2018 %>%
   filter(SUBNATIO=="8262000")   
 
-
+#england
 engpisadf2018 <-   allpisadf2018 %>%
   filter(CNTRYID==826) %>%
   separate(STRATUM, c(NA, "STRATUM"), sep=3) %>%
@@ -430,7 +476,7 @@ theme_gtsummary_compact()
 
 
 
-table1a <- svytable1(scotpisadf2018, "Scotland", "1a")
+table1a <- svytable1(scotpisadf2018, "Scotland", "1")
 table1b <- svytable1(engpisadf2018, "England", "1b")
 
 table2a <- svytable2(scotpisadf2018, "Scotland", "2a")
@@ -514,79 +560,47 @@ table5b <- svytable5(engpisadf2018, "England", "5b")
 
 ### Method
 
-#### Data
-
-We are using The Programme for International Student Assessment (PISA)
-2018 data for Scotland (and England as a comparison). PISA surveys 15
-years old students (with some leeway so includes some aged 16 ) in
-formal schooling in countries across the OECD using a standard framework
-with local adaptations. The core aim is to assess and compare countries
-on students' literacy in reading, maths and science. School based
-fieldwork in Scotland between 8th October and 14th December 2018. A two
-stage stratified sample was employed, schools and then students in
-schools were sampled (for details see [@sg2018]). Scotland had an 81%
-participation rate meeting the 80% target of the OECD. Surveys were
-computer administered and in addition to assessing the core literacies
-students completed a questionnaire covering their socio-economic
-background and their wellbeing which we draw on in this study as well.
-The Scottish questionnaires are available to download at
-[[http://www.oecd.org/pisa/publications/UK%20(Scotland).zip](http://www.oecd.org/pisa/publications/UK%20(Scotland).zip)](http://www.oecd.org/pisa/publications/UK%20(Scotland).zip)
-. As PISA is aimed at a specific age, it can cover a number of school
-years (grades in PISA terminology) . In Scotland the sample was split
-between S4 and S5 pupils (PISA grades 11 and 12) , the few in other
-years are excluded in our analysis as are any pupils who said they had
-repeated a school year. These exclusions reduced the sample from 2998
-pupils to 2802 pupils. Given the complex survey design all analysis
-incorporates replication weights and student weights. The weights are
-scaled to the population rather than the sample hence why in the
-following table the sample size is 42,243. Table 1 describes the sample
-overall and by school year. We include four measures of socio-economic
-position. PISA's summary scale is the index of economic, social and
-cultural status (ESCS). It is based on three indices, parental education
-(International Standard Classification of Education[)]{.ul}, parental
-occupation (International Socio-Economic Index) and PISA's home
-possessions scale. There is some imputation for missing data when
-calculating the ESCS.
-
-```{r table 1, include=TRUE, message=FALSE}
-knit_print(table1a)
-
-knit_print(table1b)
-
-```
-
 #### Design
 
-As illustrated in Figure 1 Scotland's February / March cut off leads to
-a large jump in the probability of being in S4 as opposed to S5. This
-allows a regression discontinuity design. Figure 2 shows the
-distribution of month of birth and we ran a test to see if there was
-evidence of bunching in the distribution of month of birth at the school
-starting cut-off, there does not seem to be
+One possible way to study the effect of school starting age would be to
+compare those who defer entry to those who do not. However, as already
+described there are a number of differences between those who defer and
+those that do not which may be difficult to control for using
+observational data. An alternative strategy commonly used is to compare
+those born around the cut-off point of starting school that year or a
+year later. As illustrated in Figure 1 Scotland's February / March cut
+off leads to a large jump in the probability of staring school a year
+later (and so being in the lower year (S4 ) when observed in our data
+aged 15). While there is some evidence that season of birth is not
+random, for example more advantaged parents are less likely to have
+winter births [@Buckles2013] , exactly planning date of birth to fall
+either side of the school start cut-off point is less likely and so
+comparing those just either side of the cut-off is akin to randomizing
+school starting date. This is a regression discontinuity design.
+Ideally, we would compare those born right at the end of February to
+those right at the start of March, however the lack of precise date of
+birth (we have month of birth) and a lack of numbers (we are using a
+sample survey) precludes this. Instead, we compare those born in
+February to those born in March. Here we are assuming that in this small
+window there are few differences between February and March born and
+even if there were these they would be small and we would be unlikely to
+see large discontinuities in outcomes in the absence of the large jump
+seen in the probability of school starting date. Having England as a
+comparator allows us to assess any month of birth differences in a
+neighbouring country that does not have the February / March cut-off but
+has a similar starting age and education system.
+
+Figure 2 shows the distribution of month of birth and we ran a test to
+see if there was evidence of bunching in the distribution of month of
+birth at the school starting cut-off, there does not seem to be
 (p=`r round(density_result$results[[3]], 2)`).
 
-```{r fig1, echo=FALSE, fig.cap="Figure 1 - The probability of being in S4 by date of birth."}
-include_graphics("fig1.png")
-
-```
-
-```{r fig2, echo=FALSE, fig.cap="Figure 2 - The distribution of month of birth"}
-include_graphics("fig2.png")
-
-```
-
-We will compare those in S4 to S5 in the month either side of the
-cut-off ,in other words those born in February and March. Table 2 shows
-that those deferring are more likely to be male and (slightly) more
-advantaged. Because deferral is not random we will use month of birth as
-an instrument for school year, a fuzzy regression discontinuity.
-Instrumental analysis has the following three assumptions.
-
-```{r table 2, include=TRUE, message=FALSE}
-
-knit_print(table2a)
-
-```
+Of course the option of deferral adds a layer of complexity. Table 1
+shows that those deferring are more likely to be male and (slightly)
+more advantaged. Because deferral is not random we will use month of
+birth as an instrument for school year, a fuzzy regression
+discontinuity. Instrumental analysis has the following four assumptions
+[@hernan2020]
 
 1.  Being either side of the cut point is a cause of the school year you
     are in.
@@ -603,19 +617,95 @@ are not taken at the same age that February born, being a year ahead,
 will take their exams at a younger age. Hence age is a mechanism through
 which school year impacts outcomes and so this differential is not a
 violation of this assumption. As a comparison we will run the same
-analysis for England where (see Figure 3) the cut date is in August and
-all pupils in PISA are in the same year.
+analysis for England where the cut date is in August and all pupils in
+PISA are in the same school year.
 
 3.  Being either side of the cut and the outcomes do not share common
     cause.
 
 Although there is evidence that season of birth might be affected by
 socio-economic position [@Buckles2013], systematic month to next month
-variation seems less likely. As Table 4 shows those born in February are
-very similar in socio-economic profile to those born in March with some
-minor differences in education background.
+variation seems less likely. As Table 3a shows those born in February
+are very similar in socio-economic profile to those born in March with
+some minor differences in education background.
+
+4.  There are no always defiers
+
+Always defiers are those that always do the opposite of what they are
+assigned by the instrument to do. In our situation the default for those
+February born would be to go to school that August but given deferral
+some "defy" this. However for March born no deferral is possible so
+defying is very unlikely. Hence the possibility of there being always
+defiers is very small. The cost of this assumption over the alternative
+fourth assumption of homogeneity is that our average effect is not for
+the whole population but for people who would always follow the school
+starting point associated with the pupil's month of birth. An advantage
+of this is that it allows us to explore effect modification.
+
+#### Data
+
+We are using The Programme for International Student Assessment (PISA)
+2018 data for Scotland (and England as a comparison). PISA surveys 15
+years old students (with some leeway so includes some aged 16 ) in
+formal schooling in countries across the OECD using a standard framework
+with local adaptations. The core aim is to assess and compare countries
+on students' literacy in reading, maths and science. School based
+fieldwork in Scotland was between 8th October and 14th December 2018. A
+two stage stratified sample was employed, schools and then students in
+schools were (randomly) sampled (for details see [@sg2018]). Scotland
+had an 81% participation rate meeting the 80% target of the OECD.
+Surveys were computer administered and in addition to assessing the core
+literacies students completed a questionnaire covering their
+socio-economic background and their wellbeing which we draw on in this
+study as well. The Scottish questionnaires are available to download at
+[[http://www.oecd.org/pisa/publications/UK%20(Scotland).zip]](http://www.oecd.org/pisa/publications/UK%20(Scotland).zip)[(http://www.oecd.org/pisa/publications/UK%20(Scotland).zip)](http://www.oecd.org/pisa/publications/UK%20(Scotland).zip)
+. As PISA is aimed at a specific age, it can cover a number of school
+years (grades in PISA terminology) . In Scotland the sample was split
+between S4 and S5 pupils (PISA grades 11 and 12) , the few in other
+years are excluded in our analysis as are any pupils who said they had
+repeated a school year. These exclusions reduced the sample from 2998
+pupils to 2802 pupils with 257 born February 2003 and 245 born March 2003.
+Given the complex survey design all analysis incorporates replication weights and
+student weights provided with the PISA data. The weights are scaled to the
+population rather than the sample hence why in
+the following table the sample size is 42,243. Tables 2 a and b describe
+the Scottish and English samples overall and by school year. We include
+four measures of socio-economic position. PISA's summary scale is the
+index of economic, social and cultural status (ESCS). It is based on
+three indices, parental education (International Standard Classification
+of Education[)]{.ul}, parental occupation (International Socio-Economic
+Index) and PISA's home possessions scale. There is some imputation by
+PISA for missing data when calculating the ESCS.
+
+As a control we use England, its school cut off is August / September
+with a starting age of 5. PISA fieldwork in 2018 happened at a similar
+time to Scotland meaning that the whole school year was observed with no
+change in grade at the February / March meaning that we can compare
+differences in Scotland to those in England for those born at the
+February / March cut-off.
+
+```{r table 1, include=TRUE, message=FALSE}
+knit_print(table1a)
 
 
+
+```
+
+```{r fig1, echo=FALSE, fig.cap="Figure 1 - The probability of being in S4 by date of birth."}
+include_graphics("fig1.png")
+
+```
+
+```{r fig2, echo=FALSE, fig.cap="Figure 2 - The distribution of month of birth"}
+include_graphics("fig2.png")
+
+```
+
+```{r table 2, include=TRUE, message=FALSE}
+
+knit_print(table2a)
+knit_print(table2b)
+```
 
 ```{r table 3, include=TRUE, message=FALSE}
 
@@ -623,47 +713,63 @@ knit_print(table3a)
 knit_print(table3b)
 ```
 
-
-
 \newpage
 
 #### Analysis
 
-We will use a version of instrumental variable analysis that accounts
-for the survey design. As there are large number of outcomes we shall be
-cautious to not over emphasise single "significant" results but to take
-a holistic approach to assessing whether there is a consistent pattern
-of results. Additionally our analysis may be underpowered so we will be
-cautious in claiming no effect when results are imprecise. Although
-missing data is relatively low we will attempt to adjust for this in
-sensitivity analysis using inverse probability weighting.
+We predominately used R and Rstudio for data management, analysis and
+writing of this protocol and will do so for planned work [@R-base;
+@rstudio2021]. A R markdown file to replicate this protocol is available
+at
+[\<https://github.com/frankpopham/pisa\>](https://github.com/frankpopham/pisa).
+To incorporate the survey design we use the *survey* and *srvyr*
+packages [@R-survey; @R-srvyr]. We will use a version of the
+instrumental variable analysis, through the *AER* and *survey* packages,
+that incorporates the survey design [@R-survey; @r-aer]. All of our
+outcomes are on a continuous scale or, in one case, ordinal and will be
+analysed as continuous. Many of the variables come standardised in the PISA data (to
+the PISA mean for all countries) to have a mean of 0 and a standard
+deviation of 1 so we will present all results standardised and assess
+the magnitude of effects relative to reported or sample standard
+deviations.
 
-To test for effect modification by socio-economic background we shall
-interact grade with our socio-economic variables. We will see whether
-comparing the extremes of advantage and disadvantage are important by
-using quartiles of the continuous socio-economic measures.
+As there are large number of outcomes we shall be cautious to not over
+emphasise single "significant" results but to take a holistic approach
+to assessing whether there is a consistent pattern of results with an
+emphasis on effect sizes. Additionally our analysis may be underpowered
+due to the number of cases so we will be cautious in claiming no effect
+when results are imprecise. Although missing data is relatively low we
+will attempt to adjust for this in sensitivity analysis using inverse
+probability weighting.
+
+To explore effect modification by socio-economic background we shall
+interact school grade with our three socio-economic variables. We will
+see whether comparing the extremes of advantage and disadvantage are
+important by using quartiles of the continuous socio-economic measures.
+We will focus on absolute inequalities as they are invariant to whether
+we analyse outcomes as positive or negative whereas relative
+inequalities are not .
 
 ##### Sensitivity analysis
 
 -   Extend analysis to include January born pupils in the control group.
 
-
 #### Outcomes
 
 ##### Wellbeing
 
-We will use the PISA framework of wellbeing that covers three main
+We will use the PISA framework of wellbeing that covers three 
 dimensions (cognitive, psychological and social) [@govorova2020]. We
 focus on 14 scales in these domains. These scales, apart from two single
 question scales, were constructed from a number of questions (see
 appendix each question) by the PISA study using item response theory
 (IRT) scaling. The scales have a mean 0 and a standard deviation of 1
 across the OECD. Negative scores mean that the score was below the OECD
-average but could be based on positive responses to the scales
+average but could be based on positive responses to the scales'
 questions. The PISA technical report contains full details of the IRT
 scaling .<http://www.oecd.org/pisa/data/pisa2018technicalreport/>
 
-Table 4 sets out the domains and their scales while the specific
+Table 4a and b sets out the domains and their scales while the specific
 questions are in Tables A1 to A14 in the appendix.
 
 ```{r table 4, include=TRUE, message=FALSE}
@@ -672,12 +778,13 @@ knit_print(table4a)
 knit_print(table4b)
 ```
 
-##### Ability
+##### Educational performance
 
-PISA measures academic ability in three core subject areas, maths,
-reading and science. As students answer different subsets of the
-questions for each subject, multiple imputation is used to combine the
-10 plausible values for each student on each scale in PISA.
+PISA measures Educational performance in three core subject areas,
+maths, reading and science. As students answer different but overlapping
+subsets of the questions for each subject, multiple imputation is used
+to combine the 10 plausible values for each student on each scale in
+PISA. We will use *micombine* to do this [@R-mitools].
 
 ```{r pisa}
 knit_print(table5a)

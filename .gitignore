@@ -33,3 +33,9 @@ renv.lock
 ivtest.R
 bits.Rmd
 .Rprofile
+packages.bib
+protocol.log
+protocol.pdf
+protocol.tex
+protocol1.docx
+protocol_CI edits.docx
