@@ -116,6 +116,10 @@ but recognizes their evidence for this is weak [@SCHWANDT201672].
     educational and well-being outcomes?
 
 ```{r setup, include=FALSE}
+
+#load packages
+
+
 knitr::opts_chunk$set(echo = FALSE, eval = TRUE)
 library(knitr)
 library(tidyverse)
@@ -138,9 +142,10 @@ library(mitools)
 #  .packages(), "knitr", "rmarkdown", "tidyverse", "haven", "lubridate", "broom", #"survey", "srvyr", "ggpubr", "rddensity", "gtsummary", "gt", "flextable", "glue", #"mitools"
 #), "packages.bib")
 
-
+#turns off scientific notation to avoid this in table outputs
 options(scipen=999)
-  
+
+# a function that sorts the dataset, the hisei option is as in 2015(?) it was spelt hisei rather than HISEI  
 datasort <- function(df, hisei) {df %>%
     select(CNTSTUID,
          CNTSCHID, 
@@ -217,6 +222,7 @@ datasort <- function(df, hisei) {df %>%
     mutate(dob = ym(dob)) %>%
     mutate(across(where(is.factor), ~fct_drop(.x)))
 }
+#filltar function limits to grade 12 and 11 and removes pupils who ever repeated a year
 
 filltar <- function(df=.data) {df %>%
   filter(grade == "Grade 12" | grade == "Grade 11" )  %>%
@@ -857,7 +863,6 @@ knit_print(table4_scot[["A25"]])
 knit_print(table4_eng[["A26"]])
 knit_print(table4_scot[["A27"]])
 knit_print(table4_eng[["A28"]])
-
 
 ```
 

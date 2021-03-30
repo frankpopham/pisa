@@ -1,0 +1,513 @@
+---
+title: The impact of school starting age on young people's well-being and educational
+  performance.
+author: "Frank Popham & Cristina Iannelli"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+#load packages
+
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE)
+library(knitr)
+library(tidyverse)
+library(haven)
+library(lubridate)
+library(broom)
+library(survey)
+library(srvyr)
+library(ggpubr)
+library(rdlocrand)
+library(gtsummary)
+library(gt)
+library(flextable)
+library(glue)
+library(mitools)
+
+
+# automatically create a bib database for R packages
+#write_bib(c(
+#  .packages(), "knitr", "rmarkdown", "tidyverse", "haven", "lubridate", "broom", #"survey", "srvyr", "ggpubr", "rddensity", "gtsummary", "gt", "flextable", "glue", #"mitools"
+#), "packages.bib")
+
+#turns off scientific notation to avoid this in table outputs
+options(scipen=999)
+
+# a function that sorts the dataset, the hisei option is as in 2015(?) it was spelt hisei rather than HISEI  
+datasort <- function(df, hisei) {df %>%
+    select(CNTSTUID,
+         CNTSCHID, 
+         yeardob = ST003D03T,
+         monthdob = ST003D02T,
+         grade = ST001D01T,
+         ESCS,
+         HISEI={{hisei}},
+         HISCED,
+         MISCED,
+         FISCED,
+         BFMJ2,
+         BMMJ1,
+         HOMEPOS,
+         SUBNATIO,
+         AGE,
+         STRATUM,
+         sex=ST004D01T,
+         repeat1=ST127Q01TA,
+         repeat2=ST127Q02TA,
+         repeat3=ST127Q03TA,
+         starts_with("W_FST"),
+         starts_with("PV"),
+         BEINGBULLIED, WORKMAST, GFOFAIL,
+         BELONG, SWBP, COMPETE, 
+         EUDMO, EMOSUPS  ,PERCOOP,
+         PERCOMP, MASTGOAL, RESILIENCE,
+         ST184Q01HA, ST208Q01HA, ST208Q02HA, ST208Q04HA,
+         ST182Q03HA, ST182Q04HA, ST182Q05HA,
+         ST182Q06HA, ST188Q01HA, ST188Q02HA,
+         ST188Q03HA, ST188Q06HA, ST188Q07HA,
+         ST183Q01HA, ST183Q02HA, ST183Q03HA,
+         ST185Q01HA, ST185Q02HA, ST185Q03HA,
+         ST186Q05HA, ST186Q06HA, ST186Q07HA,
+         ST186Q10HA, ST186Q09HA, ST186Q02HA,
+         ST186Q01HA, ST186Q08HA, ST186Q03HA, 
+         ST016Q01NA, ST181Q02HA, ST181Q03HA, ST181Q04HA, 
+         ST038Q03NA, ST038Q04NA, ST038Q05NA, 
+         ST038Q06NA, ST038Q07NA, ST038Q08NA, 
+         ST205Q01HA, ST205Q02HA, ST205Q03HA, 
+         ST205Q04HA, ST206Q01HA, ST206Q02HA,  
+         ST206Q03HA, ST206Q04HA, ST123Q02NA, 
+         ST123Q03NA, ST123Q04NA, ST034Q01TA, 
+         ST034Q02TA, ST034Q03TA, ST034Q04TA,  
+         ST034Q05TA, ST034Q06TA) %>%
+    mutate(CNTSTUID = as.numeric(CNTSTUID),
+    CNTSCHID= as.numeric(CNTSCHID),
+    yeardob = as.numeric(yeardob),
+    monthdob = as.numeric(monthdob),
+    ESCS = as.numeric(ESCS),
+    grade = as_factor(grade),
+    HISEI = as.numeric(HISEI),
+    HISCED = as_factor(HISCED),
+    FISCED = as_factor(FISCED),
+    MISCED = as_factor(MISCED),
+    BFMJ2 = as.numeric(BFMJ2),
+    BMMJ1 = as.numeric(BMMJ1),
+    HOMEPOS = as.numeric(HOMEPOS),
+    AGE=as.numeric(AGE),
+    sex=as_factor(sex),
+    STRATUM=as_factor(STRATUM),
+    repeat1=as_factor(repeat1),
+    repeat2=as_factor(repeat2),
+    repeat3=as_factor(repeat3),
+    across(starts_with("PV", ignore.case = FALSE), ~as.numeric(.x)),
+    across(ends_with("HA", ignore.case = FALSE), ~as_factor(.x)),
+    across(ends_with("NA", ignore.case = FALSE), ~as_factor(.x)),
+    across(ends_with("TA", ignore.case = FALSE), ~as_factor(.x)),
+    across(c(BEINGBULLIED, WORKMAST, GFOFAIL, BELONG, SWBP, COMPETE, 
+         EUDMO, EMOSUPS,PERCOOP, PERCOMP, MASTGOAL, RESILIENCE), ~as.numeric(.x)),
+    Lifesat=as.numeric(ST016Q01NA)) %>%
+    mutate(across(starts_with("W_FST"), ~ as.numeric(.x))) %>%
+    unite("dob", c(yeardob, monthdob), remove=FALSE, sep = "") %>%
+    mutate(dob = ym(dob)) %>%
+    mutate(across(where(is.factor), ~fct_drop(.x)))
+}
+#filltar function limits to grade 12 and 11 and removes pupils who ever repeated a year
+
+filltar <- function(df=.data) {df %>%
+  filter(grade == "Grade 12" | grade == "Grade 11" )  %>%
+  filter(repeat1=="No, never") %>%
+  filter(repeat2=="No, never") %>%
+  filter(repeat3=="No, never") %>%
+  mutate(grade2 = if_else(grade == "Grade 12", "S5", "S4")) %>%
+  mutate(grade=fct_drop(grade)) 
+}  
+
+```
+
+
+```{r data,  include=FALSE}
+
+# Download data 2018 (SPSS format) from OECD website. File is large. delete # to run
+
+#download.file("https://webfs.oecd.org/pisa2018/SAS_STU_QQQ.zip", 
+#              "SPSS_STU_QQQ.zip") 
+#unzip("SPSS_STU_QQQ.zip")
+
+
+# scotland
+allpisadf2018 <- read_sav("STU/CY07_MSU_STU_QQQ.sav") 
+scotpisadf2018 <-   allpisadf2018 %>%
+  filter(SUBNATIO=="8262000")   
+
+#england
+engpisadf2018 <-   allpisadf2018 %>%
+  filter(CNTRYID==826) %>%
+  separate(STRATUM, c(NA, "STRATUM"), sep=3) %>%
+  filter(between(as.numeric(STRATUM), 1101, 1113))
+
+
+
+
+#free ram
+rm(allpisadf2018)
+gc()
+
+# link to covariate definitions 
+
+# https://www.oecd-ilibrary.org/sites/0a428b07-en/index.html?itemId=/content/component/0a428b07-en
+
+# mum, father, highest education - MISCED, FISCED, HISCED
+
+# fathers BFMJ2; mother’s BMMJ1; and the highest occupational status of parents HISEI
+
+# datasort the data and define the survey set up 
+  
+scotpisadf2018 <- datasort(scotpisadf2018, HISEI) %>%
+  as_survey_rep(repweights=starts_with("W_FSTURWT"),
+                           weights=W_FSTUWT, type="BRR")
+
+
+engpisadf2018 <- datasort(engpisadf2018, HISEI) %>%
+  as_survey_rep(repweights=starts_with("W_FSTURWT"),
+                           weights=W_FSTUWT, type="BRR")
+
+
+```
+
+
+
+```{r}
+
+## a lot of this could be functioned but run out of time .....
+
+### this first section looks at average differences in well being outcomes.
+## scotland first
+## standardise two variables that aren't already to mean 0 and sd 1
+scotpisadf2018 <- scotpisadf2018 %>%
+  mutate(cog=5-as.numeric(ST184Q01HA)) %>%
+  mutate(cog=scale(cog)) %>%
+  mutate(Lifesat=scale(Lifesat))
+
+## list of outcomes
+
+out_list  <- list("cog", "MASTGOAL", "WORKMAST", "RESILIENCE", "GFOFAIL", 
+                  "EUDMO", "SWBP", "Lifesat", "COMPETE", "BEINGBULLIED", 
+                  "PERCOMP", "PERCOOP", "EMOSUPS", "BELONG")
+
+## then we loop over each outcome, limited to Feb , March born and then instrument 
+
+out_scot <-  map(out_list, ~scotpisadf2018 %>%
+  filltar() %>%
+  filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
+  mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
+  mutate(grade11=if_else(grade=="Grade 11", 1, 0)) %>%
+  filter(!is.na(.x)) %>%
+  svyivreg(as.formula(paste(.x, "~ grade11 | month")) , design=.) 
+) 
+
+# fuller outcome names for figures
+
+outlist2 <- list("Cognitive wellbeing" ,
+     "Learning goals", 
+     "Motivation to master tasks", 
+     "Resilience", 
+     "Fear of failure", 
+     "Meaning in life", 
+     "Positive feelings", 
+     "Life satisfaction", 
+     "Attitudes to competition", 
+     "Exposure to bullying", 
+     "Student competition", 
+     "Student co-operation", 
+     "Parents' emotional support", 
+     "Sense of belonging")
+
+names(out_scot) <- outlist2
+
+# bring results into df for graphing later
+
+outdf_scot <- map_dfr(out_scot, ~as.tibble(.x[["grade11"]]), .id="outcome") %>%
+  mutate(lower=map_dbl(out_scot, ~confint(.x)[2])) %>%
+  mutate(upper=map_dbl(out_scot, ~confint(.x)[4])) 
+  
+
+### repeat for england ()
+engpisadf2018 <- engpisadf2018 %>%
+mutate(cog=5-as.numeric(ST184Q01HA)) %>%
+  mutate(cog=scale(cog)) %>%
+  mutate(Lifesat=scale(Lifesat))
+
+out_eng <-  map(out_list, ~engpisadf2018 %>%
+                   filltar() %>%
+                   filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
+                   mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
+                   filter(!is.na(.x)) %>%
+                   svyglm(as.formula(paste(.x, "~ month")) , design=.)  
+)                
+names(out_eng) <- outlist2
+
+outdf_eng <- map_dfr(out_eng, ~tidy(.x, conf.int=TRUE), .id="outcome") %>%
+  filter(term=="monthMarch") %>%
+  select(outcome, value=estimate, lower=conf.low, upper=conf.high)
+
+## unification!
+
+
+outdf <- bind_rows("A) Scotland" =outdf_scot, 
+                   "B) England" =outdf_eng,
+                   .id="Country")
+
+# this is for academic outcomes as they require an extra step
+
+
+outpvdf_scot <- function(df, subj) {
+  v1 <- df %>%
+    select(ends_with(subj)) 
+  m1 <- names(v1$variables) %>%
+    map(~df %>%
+          filltar() %>%
+          filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
+          mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
+          mutate(grade11=if_else(grade=="Grade 11", 1, 0)) %>%
+          rename(res=.data[[.x]])) %>%
+    map(~svyivreg(res ~ grade11 | month, design=.x)) %>%
+    MIcombine()
+r1 <- tibble(.id=subj, value=m1$coefficients[2]) %>%
+  mutate(lower=confint(m1)[2]) %>%
+  mutate(upper=confint(m1)[4]) 
+}
+read_scot <- outpvdf_scot(scotpisadf2018, "READ")
+math_scot <- outpvdf_scot(scotpisadf2018, "MATH")
+scie_scot <- outpvdf_scot(scotpisadf2018, "SCIE")
+
+outpvdf_eng <- function(df, subj) {
+  v1 <- df %>%
+    select(ends_with(subj)) 
+  m1 <- names(v1$variables) %>%
+    map(~df %>%
+          filltar() %>%
+          filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
+          mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
+          rename(res=.data[[.x]])) %>%
+    map(~svyglm(res ~ month, design=.x)) %>%
+    MIcombine()
+r1 <- tibble(.id=subj, value=m1$coefficients[2]) %>%
+    mutate(lower=confint(m1)[2]) %>%
+    mutate(upper=confint(m1)[4]) 
+  }
+
+
+read_eng <- outpvdf_eng(engpisadf2018, "READ")
+math_eng <- outpvdf_eng(engpisadf2018, "MATH")
+scie_eng <- outpvdf_eng(engpisadf2018, "SCIE")
+
+tests_scot <- bind_rows(Reading=read_scot,
+                     Maths=math_scot,
+                     Science=scie_scot, .id="outcome")
+tests_eng <- bind_rows(Reading=read_eng,
+                       Maths=math_eng,
+                       Science=scie_eng, .id="outcome")
+
+tests <- bind_rows("A) Scotland"=tests_scot,
+                   "B) England"=tests_eng, .id="Country")
+
+# this plots
+
+tests %>%
+ggplot(aes(y=outcome, x=value, xmax=lower, xmin=upper)) +
+  geom_point() +
+  geom_errorbarh(height=.1) +
+  geom_vline(xintercept = 0, colour="red") +
+  scale_x_continuous(limits = c(-80, 80),
+                     breaks = c(-80, -50, -20, 0, 20, 50, 80)) +
+  facet_wrap(vars(Country), ncol=2) +
+  labs(x="Scotland S4 vs S5 in Feb & March, England March vs Feb", y=" ",
+       caption="Scotland from instrumental variable analysis")
+  
+# this plots well being
+
+ outdf %>% 
+   ggplot(aes(y=outcome, x=value, xmax=lower, xmin=upper)) +
+   geom_point() +
+   geom_errorbarh(height=.1) +
+   geom_vline(xintercept = 0, colour="red") +
+   scale_x_continuous(limits = c(-.8, .8), 
+                      breaks = c(-.8, -.5, -.2, 0, .2, .5, .8)) +
+   facet_wrap(vars(Country), ncol=2) +
+   labs(x="Scotland S4 vs S5 in Feb & March, England March vs Feb", y=" ",
+        caption="Scotland from instrumental variable analysis")
+```
+
+
+```{r}
+###interactions, essentially this repeats the above but interacts with degree or not
+ 
+
+  
+out_scot_int <-  map(out_list, ~scotpisadf2018 %>%
+  filltar() %>%
+  filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
+  mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
+  mutate(grade11=if_else(grade=="Grade 11", 1, 0)) %>%
+  mutate(degree=if_else(HISCED=="ISCED 5A, 6", 1, 0)) %>% 
+  filter(!is.na(.x) & !is.na(degree)) %>%
+  svyivreg(as.formula(paste(.x, "~ grade11*degree | month*degree")) , design=.)
+)
+names(out_scot_int) <- outlist2
+no_degree_scot <- out_scot_int %>%
+  map(~svycontrast(.x, c("grade11"=1)))
+degree_scot <- out_scot_int %>%
+  map(~svycontrast(.x, c("grade11"=1, "grade11:degree"=1)))
+no_degree_ci_scot <- map_dfr(no_degree_scot, ~as_tibble(confint(.x)), .id="outcome")
+degree_ci_scot <- map_dfr(degree_scot, ~as_tibble(confint(.x)), .id="outcome")
+no_degree_est_scot <- map_dfr(no_degree_scot, ~as_tibble(.x[["contrast"]]), .id="outcome")
+degree_est_scot <- map_dfr(degree_scot, ~as_tibble(.x[["contrast"]]), .id="outcome")
+
+degree_scot_int <- left_join(bind_rows("No degree"=no_degree_est_scot,
+                                  "Degree"=degree_est_scot, .id="Degree"), 
+                        bind_rows("No degree"=no_degree_ci_scot,
+                                  "Degree"=degree_ci_scot, .id="Degree"))
+
+#england
+out_eng_int <-  map(out_list, ~engpisadf2018 %>%
+                   filltar() %>%
+                   filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
+                   mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
+                   mutate(degree=if_else(HISCED=="ISCED 5A, 6", 1, 0)) %>%   
+                   filter(!is.na(.x) & !is.na(degree)) %>%
+                   svyglm(as.formula(paste(.x, "~ month*degree")) , design=.)) 
+
+names(out_eng_int) <- outlist2
+no_degree_eng <- out_eng_int %>%
+  map(~svycontrast(.x, c("monthMarch"=1)))
+degree_eng <- out_eng_int %>%
+  map(~svycontrast(.x, c("monthMarch"=1, "monthMarch:degree"=1)))
+no_degree_ci_eng <- map_dfr(no_degree_eng, ~as_tibble(confint(.x)), .id="outcome")
+degree_ci_eng <- map_dfr(degree_eng, ~as_tibble(confint(.x)), .id="outcome")
+no_degree_est_eng <- map_dfr(no_degree_eng, ~as_tibble(.x[["contrast"]]), .id="outcome")
+degree_est_eng <- map_dfr(degree_eng, ~as_tibble(.x[["contrast"]]), .id="outcome")
+
+degree_eng_int <- left_join(bind_rows("No degree"=no_degree_est_eng,
+                                       "Degree"=degree_est_eng, .id="Degree"), 
+                             bind_rows("No degree"=no_degree_ci_eng,
+                                       "Degree"=degree_ci_eng, .id="Degree"))
+
+
+degree_int <- bind_rows("A) Scotland"=degree_scot_int,
+                   "B) England"=degree_eng_int, .id="Country")
+
+
+degree_int %>%
+   rename(lower="2.5 %",
+          upper="97.5 %") %>%
+   mutate(across(where(is.numeric), ~ifelse(.x>0.8, 0.8, .x))) %>%
+   mutate(across(where(is.numeric), ~ifelse(.x<(-0.8), -0.8, .x))) %>%
+   ggplot(aes(y=outcome, x=value, xmax=lower, xmin=upper, colour=Degree)) +
+   geom_point(position = position_dodge(width = 0.6)) +
+   geom_errorbarh(height=.1, position = position_dodge(width = 0.6)) +
+   geom_vline(xintercept = 0, colour="black") +
+   scale_x_continuous(limits = c(-.8, .8), 
+                      breaks = c(-.8, -.5, -.2, 0, .2, .5, .8)) +
+   facet_wrap(vars(Country), ncol=2) +
+   labs(x="Scotland S4 vs S5 in Feb & March", y=" ",
+        caption="Scotland from instrumental variable analysis") +
+   theme(legend.position = "top")
+
+outpvdf_scot_int <- function(df, subj) {
+  v1 <- df %>%
+    select(ends_with(subj)) 
+  m1 <- names(v1$variables) %>%
+    map(~df %>%
+          filltar() %>%
+          filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
+          mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
+          mutate(grade11=if_else(grade=="Grade 11", 1, 0)) %>%
+          mutate(degree=if_else(HISCED=="ISCED 5A, 6", 1, 0)) %>%
+          filter(!is.na(degree)) %>%
+          rename(res=.data[[.x]])) %>%
+    map(~svyivreg(res ~ grade11*degree | month*degree, design=.x)) %>%
+    MIcombine() 
+    nd <- svycontrast(m1, c("grade11"=1))
+    d <- svycontrast(m1, c("grade11"=1, "grade11:degree"=1))
+    nd_ci <- as_tibble(confint(nd))
+    d_ci <- as_tibble(confint(d))
+    nd_est <- as_tibble(nd[["contrast"]])
+    d_est <- as_tibble(d[["contrast"]])
+    left_join(bind_rows("No degree"=nd_est,
+                        "Degree"=d_est, .id="Degree"), 
+              bind_rows("No degree"=nd_ci,
+                        "Degree"=d_ci, .id="Degree"))
+}  
+
+
+read_scot_int <- outpvdf_scot_int(scotpisadf2018, "READ")
+math_scot_int <- outpvdf_scot_int(scotpisadf2018, "MATH")
+scie_scot_int <- outpvdf_scot_int(scotpisadf2018, "SCIE")
+
+ 
+outpvdf_eng_int <- function(df, subj) {
+  v1 <- df %>%
+    select(ends_with(subj)) 
+  m1 <- names(v1$variables) %>%
+    map(~df %>%
+          filltar() %>%
+          filter(dob >= ymd("2003_02_01") & dob <=ymd("2003_03_01")) %>%
+          mutate(month=if_else(dob==ymd("2003_02_01"), "Feb", "March")) %>%
+          mutate(grade11=if_else(grade=="Grade 11", 1, 0)) %>%
+          mutate(degree=if_else(HISCED=="ISCED 5A, 6", 1, 0)) %>%
+          filter(!is.na(degree)) %>%
+          rename(res=.data[[.x]])) %>%
+    map(~svyglm(res ~ month*degree, design=.x)) %>%
+    MIcombine() 
+  nd <- svycontrast(m1, c("monthMarch"=1))
+  d <- svycontrast(m1, c("monthMarch"=1, "monthMarch:degree"=1))
+  nd_ci <- as_tibble(confint(nd))
+  d_ci <- as_tibble(confint(d))
+  nd_est <- as_tibble(nd[["contrast"]])
+  d_est <- as_tibble(d[["contrast"]])
+  left_join(bind_rows("No degree"=nd_est,
+                      "Degree"=d_est, .id="Degree"), 
+            bind_rows("No degree"=nd_ci,
+                      "Degree"=d_ci, .id="Degree"))
+}  
+
+
+read_eng_int <- outpvdf_eng_int(engpisadf2018, "READ")
+math_eng_int <- outpvdf_eng_int(engpisadf2018, "MATH")
+scie_eng_int <- outpvdf_eng_int(engpisadf2018, "SCIE")
+
+
+tests_scot_int <- bind_rows(Reading=read_scot_int,
+                     Maths=math_scot_int,
+                     Science=scie_scot_int, .id="outcome")
+tests_eng_int <- bind_rows(Reading=read_eng_int,
+                       Maths=math_eng_int,
+                       Science=scie_eng_int, .id="outcome")
+
+tests_int <- bind_rows("A) Scotland"=tests_scot_int,
+                   "B) England"=tests_eng_int, .id="Country")
+
+
+tests_int %>%
+   rename(lower="2.5 %",
+          upper="97.5 %") %>%
+   mutate(across(where(is.numeric), ~ifelse(.x>80, 80, .x))) %>%
+   mutate(across(where(is.numeric), ~ifelse(.x<(-80), -80, .x))) %>%
+   ggplot(aes(y=outcome, x=value, xmax=lower, xmin=upper, colour=Degree)) +
+   geom_point(position = position_dodge(width = 0.6)) +
+   geom_errorbarh(height=.1, position = position_dodge(width = 0.6)) +
+   geom_vline(xintercept = 0, colour="black") +
+   scale_x_continuous(limits = c(-80, 80), 
+                      breaks = c(-80, -50, -20, 0, 20, 50, 80)) +
+   facet_wrap(vars(Country), ncol=2) +
+   labs(x="Scotland S4 vs S5 in Feb & March", y=" ",
+        caption="Scotland from instrumental variable analysis") +
+   theme(legend.position = "top")
+
+
+
+
+
+```
+
